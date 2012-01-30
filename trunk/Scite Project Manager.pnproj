@@ -1,0 +1,13 @@
+<Project name="Scite Project Manager">
+	<File path="SPM.au3"></File>
+	<File path="GUI.au3"></File>
+	<File path="Projects.au3"></File>
+	<File path="Events.au3"></File>
+	<File path="Misc.au3"></File>
+	<File path="Lang.au3"></File>
+	<File path="Const.au3"></File>
+	<File path="TreeView.au3"></File>
+	<Folder name="lib">
+		<File path="lib\ScriptingDictionary.au3"></File>
+	</Folder>
+</Project>
