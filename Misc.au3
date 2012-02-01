@@ -9,6 +9,13 @@
 #ce ----------------------------------------------------------------------------
 #Include-Once
 
+Func _Err($sText, $iCritical = 0)
+	MsgBox(16, LNG("progName"), $sText)
+	If $iCritical Then Exit
+EndFunc
+
+; ##############################################################
+
 Func _File_GetName($s)
 	Return StringTrimLeft($s, StringInStr($s, "\", 1, -1))
 EndFunc

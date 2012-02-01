@@ -13,6 +13,7 @@
 #include <GuiTreeView.au3>
 
 Global $__TV_Assoc[1][3] = [[0, "", ""]] ; hndl, info, parent
+; ---
 
 Func _TV_Add($sText, $sType, $hParent, $sPath = "", $iProjectID = "")
 	Local $hCtrl, $iIco
@@ -35,17 +36,18 @@ Func _TV_Add($sText, $sType, $hParent, $sPath = "", $iProjectID = "")
 			EndSwitch
 			; ---
 			$hCtrl = _GuiCtrlTreeView_AddChild($hTree, $hParent, $sText, $iIco, $iIco)
-			_TV_ItemSetInfo($hCtrl, "FILE|" & $iProjectID & "|" & $sPath)
+			_TV_ItemSetInfo($hCtrl, "FILE|" & $iProjectID & "|" & $sPath, $hParent)
 		Case "folder"
 			$hCtrl = _GuiCtrlTreeView_AddChild($hTree, $hParent, $sText, 1, 1)
-			_TV_ItemSetInfo($hCtrl, "FOLDER|" & $iProjectID)
+			_TV_ItemSetInfo($hCtrl, "FOLDER|" & $iProjectID, $hParent)
 	EndSwitch
 	; ---
 	Return $hCtrl
 EndFunc
 
-Func _TV_ItemSetInfo($hItem, $sData)
-	_GuiCtrlTreeView_SetItemParam($hTree, $hItem, _TV_AssocInfo($hItem, $sData))
+Func _TV_ItemSetInfo($hItem, $sData, $hParent = 0)
+	Local $assocInfoID = _TV_AssocInfo_Add($hItem, $sData, $hParent)
+	_GuiCtrlTreeView_SetItemParam($hTree, $hItem, $assocInfoID)
 EndFunc
 
 ; Retourne un Array de forme:
@@ -54,7 +56,7 @@ EndFunc
 ; 2 = Project ID
 ; 3 = File Path (for Project and File only)
 Func _TV_ItemGetInfo($hItem)
-	Local $info = _TV_GetAssoc(_GuiCtrlTreeView_GetItemParam($hTree, $hItem))
+	Local $info = _TV_AssocInfo_Get(_GuiCtrlTreeView_GetItemParam($hTree, $hItem))
 	Local $text = _GuiCtrlTreeView_GetText($hTree, $hItem)
 	; ---
 	Local $ret[1] = [$text]
@@ -69,7 +71,53 @@ EndFunc
 
 ; ##############################################################
 
-Func _TV_AssocInfo($hItem, $sInfo, $hParent = 0)
+Func _TV_ProjectToXML($hItem)
+	Local $xml = '<Project name="' & _GuiCtrlTreeView_GetText($hTree, $hItem) & '">' & @CRLF
+	; ---
+	__TV_ParseSubItems($xml, $hItem, 1)
+	$xml &= '</Project>'
+	; ---
+	Return $xml
+EndFunc
+
+Func __TV_ParseSubItems(ByRef $xml, $hItem, $iIndent)
+	Local $count = _GuiCtrlTreeView_GetChildCount($hTree, $hItem)
+	If $count <= 0 Then Return
+	; ---
+	Local $first = _GuiCtrlTreeView_GetFirstChild($hTree, $hItem)
+	If _GuiCtrlTreeView_GetChildCount($hTree, $first) > 0 Then
+		__TV_XmlAppend($xml, '<Folder name="' & _GuiCtrlTreeView_GetText($hTree, $first) & '">', $iIndent)
+			__TV_ParseSubItems($xml, $first, $iIndent + 1)
+			__TV_XmlAppend($xml, '</Folder>', $iIndent)
+	Else
+		; ne pas oublier de mettre le path du fichier
+		__TV_XmlAppend($xml, '<File path="' & _GuiCtrlTreeView_GetText($hTree, $first) & '"></File>', $iIndent)
+	EndIf
+	; ---
+	Local $currItem
+	For $i = 2 To $count
+		$currItem = _GuiCtrlTreeView_GetNextChild($hTree, $first)
+		; ---
+		If _GuiCtrlTreeView_GetChildCount($hTree, $currItem) > 0 Then
+			__TV_XmlAppend($xml, '<Folder name="' & _GuiCtrlTreeView_GetText($hTree, $currItem) & '">', $iIndent)
+			__TV_ParseSubItems($xml, $currItem, $iIndent + 1)
+			__TV_XmlAppend($xml, '</Folder>', $iIndent)
+		Else
+			; ne pas oublier de mettre le path du fichier
+			__TV_XmlAppend($xml, '<File path="' & _GuiCtrlTreeView_GetText($hTree, $currItem) & '"></File>', $iIndent)
+		EndIf
+		; ---
+		$first = $currItem
+	Next
+EndFunc
+
+Func __TV_XmlAppend(ByRef $xml, $sText, $iIndent)
+	$xml &= _StringRepeat(@TAB, $iIndent) & $sText & @CRLF
+EndFunc
+
+; ##############################################################
+
+Func _TV_AssocInfo_Add($hItem, $sInfo, $hParent = 0)
 	Local $id = __FindSlot()
 	$__TV_Assoc[$id][0] = $hItem
 	$__TV_Assoc[$id][1] = $sInfo
@@ -77,11 +125,16 @@ Func _TV_AssocInfo($hItem, $sInfo, $hParent = 0)
 	Return $id
 EndFunc
 
-Func _TV_GetAssoc($ID)
+Func _TV_AssocInfo_Modify($hItem, $sInfo)
+	Local $id = _GuiCtrlTreeView_GetItemParam($hTree, $hItem)
+	$__TV_Assoc[$id][1] = $sInfo
+EndFunc
+
+Func _TV_AssocInfo_Get($ID)
 	Return $__TV_Assoc[$ID][1]
 EndFunc
 
-Func _TV_DelAssocInfo($hItem)
+Func _TV_AssocInfo_Del($hItem)
 	For $i = $__TV_Assoc[0][0] To 1 Step -1
 		If $__TV_Assoc[$i][2] = $hItem Or $__TV_Assoc[$i][0] = $hItem Then
 			$__TV_Assoc[$i][0] = 0

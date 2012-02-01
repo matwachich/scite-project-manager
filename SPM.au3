@@ -31,8 +31,14 @@ While 1
 	Switch $nMsg
 		Case $GUI_EVENT_CLOSE, $Menu_Exit
 			Exit
+		Case $Menu_New
+			_Event_New()
 		Case $Menu_Open
 			_Event_Open()
+		Case $Menu_Save
+			_Project_Save($__ActifProject)
+		Case $Menu_SaveAs
+			_Project_Save($__ActifProject, 1)
 	EndSwitch
 WEnd
 
