@@ -9,8 +9,17 @@
 #ce ----------------------------------------------------------------------------
 #Include-Once
 
+Func _Event_New()
+	Local $prjName = InputBox(LNG("ProgName"), LNG("prompt_new"))
+	If @error Or Not $prjName Then Return
+	; ---
+	Local $hCtrl = _TV_Add($prjName, "PROJECT", $hTree, "", "")
+	Local $iProjectID = __OpenProject_Add($prjName, "", $hCtrl)
+	_TV_ItemSetInfo($hCtrl, "PROJECT|" & $iProjectID & "|")
+EndFunc
+
 Func _Event_Open()
-	Local $path = FileOpenDialog(LNG("progName"), @WorkingDir, "Projects/Projects Groups (*.pnproj;*.ppg)|All (*.*)", 7, "", $GUI_Main)
+	Local $path = FileOpenDialog(LNG("ProgName"), @WorkingDir, "Au3 Project/Workspace (*.auproj;*.auwork)|Programmer's Notepad Project/Workspace (*.pnproj;*.ppg)|All (*.*)", 7, "", $GUI_Main)
 	If @error Or Not $path Then Return
 	; ---
 	If Not StringInStr($path, "|") Then
@@ -27,10 +36,17 @@ Func _Event_Open()
 	EndIf
 EndFunc
 
+; ##############################################################
+
 Func _Event_TV_DblClick($hItem)
 	$info = _TV_ItemGetInfo($hItem)
 	For $elem In $info
 		ConsoleWrite($elem & @CRLF)
 	Next
 	ConsoleWrite("===" & @CRLF)
+	; ---
+	Switch $info[1]
+		Case "PROJECT"
+			__SetActifProject($info[2])
+	EndSwitch
 EndFunc

@@ -38,6 +38,14 @@ Func __Lang_LoadDefault()
 	_SD_Set($oLangDic, "Menu_Misc",			"&Misc", 0, 1)
 	_SD_Set($oLangDic, "Menu_Cfg",			"Configuration", 0, 1)
 	_SD_Set($oLangDic, "Menu_About",		"About", 0, 1)
+	; ---
+	; Prompt
+	_SD_Set($oLangDic, "prompt_new",		"Enter project's name", 0, 1)
+	_SD_Set($oLangDic, "prompt_save",		'Save Project: "%s"', 0, 1)
+	; ---
+	; Errors
+	_SD_Set($oLangDic, "err_cannotSave",	"Impossible to save to the specified file.", 0, 1)
+	_SD_Set($oLangDic, "err_invalidFile",	"The file specified is invalid:" & @CRLF & "%s", 0, 1)
 EndFunc
 ; ---
 
