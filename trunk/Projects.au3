@@ -78,11 +78,12 @@ Func _Project_Save($iProjectID, $iSaveAs = 0)
 	Local $sFile = $__OpenedProjects[$iProjectID][1]
 	; ---
 	If $iSaveAs Or Not $sFile Then
-		$sFile = FileOpenDialog(LNG("prompt_save", $__OpenedProjects[$iProjectID][0]), @WorkingDir, "Au3 Project (*.auproj)", 0, "", $GUI_Main)
+		$sFile = FileSaveDialog(LNG("prompt_save", $__OpenedProjects[$iProjectID][0]), @WorkingDir, "Au3 Project (*.auproj)", 16, "", $GUI_Main)
 		If $sFile And StringRight($sFile, 7) <> ".auproj" Then $sFile &= ".auproj"
 	EndIf
 	If Not $sFile Then Return 0
 	; ---
+	; mise a jour des infos du project (Array, Info Associées au hTreeViewItem)
 	$__OpenedProjects[$iProjectID][1] = $sFile
 	_TV_AssocInfo_Modify($__OpenedProjects[$iProjectID][2], "PROJECT|" & $iProjectID & "|" & $sFile)
 	; ---
@@ -94,39 +95,88 @@ Func _Project_Save($iProjectID, $iSaveAs = 0)
 		Return 0
 	EndIf
 	; ---
+	__OpenProject_SetModified($iProjectID, 0)
 	Return 1
 EndFunc
 
 ; ##############################################################
 
 Func _Project_Close($iProjectID)
-	
+	ConsoleWrite("Project Close: " & $iProjectID & @CRLF)
+	If __OpenProject_IsModified($iProjectID) And _Ask(LNG("ask_save")) Then
+		If Not _Project_Save($iProjectID) Then Return
+	EndIf
+	; ---
+	Local $hItem = __OpenProject_GetItemHandle($iProjectID)
+	_TV_AssocInfo_Del($hItem)
+	_GuiCtrlTreeView_Delete($hTree, $hItem)
+	__OpenProject_Del($iProjectID)
 EndFunc
 
 ; ##############################################################
 
-Func __OpenProject_Add($sName, $sPath, $CtrlID)
+Func __OpenProject_Add($sName, $sPath, $CtrlID, $iModified = 0)
 	ReDim $__OpenedProjects[$__OpenedProjects[0][0] + 2][4]
 	$__OpenedProjects[0][0] += 1
 	$__OpenedProjects[$__OpenedProjects[0][0]][0] = $sName
 	$__OpenedProjects[$__OpenedProjects[0][0]][1] = $sPath
 	$__OpenedProjects[$__OpenedProjects[0][0]][2] = $CtrlID
-	$__OpenedProjects[$__OpenedProjects[0][0]][3] = 0 ; modified
+	;$__OpenedProjects[$__OpenedProjects[0][0]][3] = $iModified
+	; on fait ça pour que la petite étoile se mette en place à coté du nom du projet
+	; si celui ci est nouveau
+	__OpenProject_SetModified($__OpenedProjects[0][0], $iModified)
 	; ---
 	If $__ActifProject = 0 Then __SetActifProject($__OpenedProjects[0][0])
 	; ---
 	Return $__OpenedProjects[0][0]
 EndFunc
 
-Func __OpenProject_Del($sName, $sPath)
-	For $i = 1 To $__OpenedProjects[0][0]
-		If $__OpenedProjects[$i][0] = $sName And $__OpenedProjects[$i][1] = $sPath Then
-			_ArrayDelete($__OpenedProjects, $i)
-			$__OpenedProjects[0][0] -= 1
-			; ---
-			Return
-		EndIf
-	Next
+Func __OpenProject_GetName($iProjectID)
+	If $iProjectID > $__OpenedProjects[0][0] Then Return SetError(1, 0, "")
+	; ---
+	Return $__OpenedProjects[$iProjectID][0]
+EndFunc
+
+Func __OpenProject_GetPath($iProjectID)
+	If $iProjectID > $__OpenedProjects[0][0] Then Return SetError(1, 0, "")
+	; ---
+	Return $__OpenedProjects[$iProjectID][1]
+EndFunc
+
+Func __OpenProject_GetItemHandle($iProjectID)
+	If $iProjectID > $__OpenedProjects[0][0] Then Return SetError(1, 0, 0)
+	; ---
+	Return $__OpenedProjects[$iProjectID][2]
+EndFunc
+
+Func __OpenProject_IsModified($iProjectID)
+	If $iProjectID > $__OpenedProjects[0][0] Then Return SetError(1, 0, -1)
+	; ---
+	;ConsoleWrite("Is Modified: " & $iProjectID & " = " & $__OpenedProjects[$iProjectID][3] & @CRLF)
+	Return $__OpenedProjects[$iProjectID][3]
+EndFunc
+
+Func __OpenProject_SetModified($iProjectID, $iModified = 1)
+	If $iProjectID > $__OpenedProjects[0][0] Then Return SetError(1, 0, -1)
+	; ---
+	;ConsoleWrite("Set Modified: " & $iProjectID & " = " & $iModified & @CRLF)
+	; ---
+	Local $text = _GuiCtrlTreeView_GetText($hTree, $__OpenedProjects[$iProjectID][2])
+	If $iModified Then
+		_GuiCtrlTreeView_SetText($hTree, $__OpenedProjects[$iProjectID][2], $text & " *")
+	Else
+		_GuiCtrlTreeView_SetText($hTree, $__OpenedProjects[$iProjectID][2], StringTrimRight($text, 2))
+	EndIf
+	; ---
+	$__OpenedProjects[$iProjectID][3] = $iModified
+	Return 1
+EndFunc
+
+Func __OpenProject_Del($iProjectID)
+	If $iProjectID > $__OpenedProjects[0][0] Then Return SetError(1, 0, -1)
+	; ---
+	_ArrayDelete($__OpenedProjects, $iProjectID)
+	$__OpenedProjects[0][0] -= 1
 EndFunc
 
 Func __OpenProject_IsOpen($sName, $sPath)
@@ -153,15 +203,3 @@ Func __SetActifProject($iID = Default)
 		EndIf
 	EndIf
 EndFunc
-
-; ##############################################################
-
-Func _XML_getDisplayName($node)
-	Switch StringUpper($node.nodeName())
-		Case "PROJECT", "FOLDER"
-			Return $node.getAttribute("name")
-		Case "FILE"
-			Return $node.getAttribute("path")
-	EndSwitch
-	Return ""
-EndFunc   ;==>XML_getDisplayName
