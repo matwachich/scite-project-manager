@@ -14,10 +14,10 @@
 #include "Lang.au3"
 #include "Const.au3"
 #include "GUI.au3"
+#include "Projects.au3"
+#include "TreeView.au3"
 #include "Events.au3"
 #include "Misc.au3"
-#include "TreeView.au3"
-#include "Projects.au3"
 
 _Lang_Load()
 
@@ -25,6 +25,11 @@ _GUI_Main()
 _GUI_Main($__GUI_Show)
 
 OnAutoItExitRegister("_OnExit")
+
+If Not @Compiled Then
+	HotKeySet("!t", "_Debug_ShowArray_TV")
+	HotKeySet("!p", "_Debug_ShowArray_Projects")
+EndIf
 
 While 1
 	$nMsg = GUIGetMsg()
@@ -35,14 +40,22 @@ While 1
 			_Event_New()
 		Case $Menu_Open
 			_Event_Open()
+		; ---
 		Case $Menu_Save
-			_Project_Save($__ActifProject)
+			_Event_Save()
 		Case $Menu_SaveAs
-			_Project_Save($__ActifProject, 1)
+			_Event_SaveAs()
+		; ---
+		Case $Menu_Close
+			_Event_Close()
+		; ---
+		Case $Menu_AddFile
+			_Event_AddFile()
 	EndSwitch
 WEnd
 
 Func _OnExit()
+	_Event_Close(1)
 	_GUI_Main($__GUI_Delete)
 EndFunc
 

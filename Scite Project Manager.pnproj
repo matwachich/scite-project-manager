@@ -1,6 +1,9 @@
 <Project name="Scite Project Manager">
 	<Folder name="lib">
-		<File path="ScriptingDictionary.au3"></File>
+		<File path="lib\ScriptingDictionary.au3"></File>
+	</Folder>
+	<Folder name="doc">
+		<File path="ToDo.txt"></File>
 	</Folder>
 	<File path="SPM.au3"></File>
 	<File path="GUI.au3"></File>

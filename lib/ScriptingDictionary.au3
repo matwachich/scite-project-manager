@@ -1,4 +1,5 @@
 ; Scripting Dictionary, By Matwachich
+; !!! the Key is Case-Sensitive !!!
 
 Global $__ScriptingDictionary_ErrorHandler = ObjEvent("AutoIt.Error", "__ScriptingDictionary_ErrorHandler")
 Global $__ScriptingDictionary_LastUsed

@@ -20,9 +20,9 @@ Func _TV_Add($sText, $sType, $hParent, $sPath = "", $iProjectID = "")
 	Switch $sType
 		Case "project"
 			$hCtrl = _GuiCtrlTreeView_Add($hTree, 0, $sText, 0, 0)
-			;_GuiCtrlTreeView_SetItemParam($hTree, $hCtrl, _TV_AssocInfo($hCtrl, "PROJECT|" & $iProjectID & "|" & $sPath))
+			;_TV_ItemSetInfo($hCtrl, "PROJECT|" & $iProjectID & "|" & $sPath)
 			; doit être fait après avoir ajouter le projet au Array des projets ouverts, pour pouvoir y associer le iProjectID
-			; c'est fait dans la fontion _LoadProject
+			; c'est fait dans la fontion _LoadProject (Projects.au3)
 		Case "file"
 			Switch _File_GetExt($sPath)
 				Case "au3"
@@ -36,16 +36,27 @@ Func _TV_Add($sText, $sType, $hParent, $sPath = "", $iProjectID = "")
 			EndSwitch
 			; ---
 			$hCtrl = _GuiCtrlTreeView_AddChild($hTree, $hParent, $sText, $iIco, $iIco)
-			_TV_ItemSetInfo($hCtrl, "FILE|" & $iProjectID & "|" & $sPath, $hParent)
+			_TV_ItemSetInfo($hCtrl, "FILE|" & $iProjectID & "|" & $sPath, $iProjectID)
 		Case "folder"
 			$hCtrl = _GuiCtrlTreeView_AddChild($hTree, $hParent, $sText, 1, 1)
-			_TV_ItemSetInfo($hCtrl, "FOLDER|" & $iProjectID, $hParent)
+			_TV_ItemSetInfo($hCtrl, "FOLDER|" & $iProjectID, $iProjectID)
 	EndSwitch
 	; ---
 	Return $hCtrl
 EndFunc
 
-Func _TV_ItemSetInfo($hItem, $sData, $hParent = 0)
+Func _TV_ItemGetProjectID($hItem)
+	For $i = 1 To $__OpenedProjects[0][0]
+		If $hItem = $__OpenedProjects[$i][2] Then Return $i
+	Next
+	Return SetError(1, 0, 0)
+EndFunc
+
+; hParent doit toujours être le Item du projet (et pas d'un dossier) pour que la suppression
+; lors de la fermeture d'un project se passe bien (sans résidus)
+Func _TV_ItemSetInfo($hItem, $sData, $iProjectID = 0)
+	Local $hParent = 0 ; doit être le Item du projet
+	If $iProjectID > 0 Then $hParent = __OpenProject_GetItemHandle($iProjectID)
 	Local $assocInfoID = _TV_AssocInfo_Add($hItem, $sData, $hParent)
 	_GuiCtrlTreeView_SetItemParam($hTree, $hItem, $assocInfoID)
 EndFunc
@@ -84,14 +95,16 @@ Func __TV_ParseSubItems(ByRef $xml, $hItem, $iIndent)
 	Local $count = _GuiCtrlTreeView_GetChildCount($hTree, $hItem)
 	If $count <= 0 Then Return
 	; ---
+	Local $tmp
 	Local $first = _GuiCtrlTreeView_GetFirstChild($hTree, $hItem)
 	If _GuiCtrlTreeView_GetChildCount($hTree, $first) > 0 Then
 		__TV_XmlAppend($xml, '<Folder name="' & _GuiCtrlTreeView_GetText($hTree, $first) & '">', $iIndent)
 			__TV_ParseSubItems($xml, $first, $iIndent + 1)
 			__TV_XmlAppend($xml, '</Folder>', $iIndent)
 	Else
-		; ne pas oublier de mettre le path du fichier
-		__TV_XmlAppend($xml, '<File path="' & _GuiCtrlTreeView_GetText($hTree, $first) & '"></File>', $iIndent)
+		; ne pas oublier de mettre le path du fichier (ok)
+		$tmp = _TV_ItemGetInfo($first)
+		__TV_XmlAppend($xml, '<File path="' & $tmp[3] & '"></File>', $iIndent)
 	EndIf
 	; ---
 	Local $currItem
@@ -103,8 +116,9 @@ Func __TV_ParseSubItems(ByRef $xml, $hItem, $iIndent)
 			__TV_ParseSubItems($xml, $currItem, $iIndent + 1)
 			__TV_XmlAppend($xml, '</Folder>', $iIndent)
 		Else
-			; ne pas oublier de mettre le path du fichier
-			__TV_XmlAppend($xml, '<File path="' & _GuiCtrlTreeView_GetText($hTree, $currItem) & '"></File>', $iIndent)
+			; ne pas oublier de mettre le path du fichier (ok)
+			$tmp = _TV_ItemGetInfo($currItem)
+			__TV_XmlAppend($xml, '<File path="' & $tmp[3] & '"></File>', $iIndent)
 		EndIf
 		; ---
 		$first = $currItem
@@ -156,11 +170,4 @@ Func __FindSlot()
 	ReDim $__TV_Assoc[$__TV_Assoc[0][0] + 2][3]
 	$__TV_Assoc[0][0] += 1
 	Return $__TV_Assoc[0][0]
-EndFunc
-
-Func __Info_2_KeyVal($info, ByRef $key, ByRef $val)
-	$info = StringSplit($info, "|")
-	If $info[0] = 1 Then _ArrayAdd($info, "")
-	$key = $info[1]
-	$val = $info[2]
 EndFunc
