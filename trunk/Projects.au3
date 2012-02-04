@@ -39,29 +39,46 @@ Func _LoadProject($sFile)
 	Local $projects = $oXml.SelectNodes("/Project")
 	If Not IsObj($projects) Then Return SetError(2, 0, 0)
 	; ---
-	Local $prjName, $hCtrl, $iProjectID, $OK = 0
+	Local $prjName, $hCtrl, $iProjectID, $aToExpend[1], $tmp
 	For $elem In $projects
+		ReDim $aToExpend[1]
+		$aToExpend[0] = 0
+		; ---
 		$prjName = _XML_getDisplayName($elem)
 		If __OpenProject_IsOpen($prjName, $sFile) Then ContinueLoop
 		; ---
 		$hCtrl = _TV_Add($prjName, "project", $hTree, $sFile)
 		; ---
+		$tmp = $elem.GetAttribute("exp")
+		If $tmp == "True" Then
+			_ArrayAdd($aToExpend, $hCtrl)
+			$aToExpend[0] += 1
+		EndIf
+		; ---
 		$iProjectID = __OpenProject_Add($prjName, $sFile, $hCtrl)
 		_TV_ItemSetInfo($hCtrl, "PROJECT|" & $iProjectID & "|" & $sFile)
 		; ---
-		__BuildSubTreeView($elem, $hCtrl, $iProjectID)
+		__BuildSubTreeView($elem, $hCtrl, $iProjectID, $aToExpend)
 		; ---
-		_GuiCtrlTreeView_Expand($hTree, $hCtrl, True)
+		__TV_ExpandItems($aToExpend)
 	Next
+	;_ArrayDisplay($aToExpend)
 EndFunc
 
-Func __BuildSubTreeView($hNode, $hCtrl, $iProjectID)
+Func __BuildSubTreeView($hNode, $hCtrl, $iProjectID, ByRef $aToExpend)
 	; folders
 	Local $fld, $fldName
 	Local $folders = $hNode.SelectNodes("Folder")
 	For $elem In $folders
 		$fld = _TV_Add(_XML_getDisplayName($elem), "folder", $hCtrl, "", $iProjectID)
-		__BuildSubTreeView($elem, $fld, $iProjectID)
+		; ---
+		$tmp = $elem.GetAttribute("exp")
+		If $tmp == "True" Then
+			_ArrayAdd($aToExpend, $fld)
+			$aToExpend[0] += 1
+		EndIf
+		; ---
+		__BuildSubTreeView($elem, $fld, $iProjectID, $aToExpend)
 	Next
 	; files
 	Local $file, $filePath
@@ -87,7 +104,7 @@ Func _Project_Save($iProjectID, $iSaveAs = 0)
 	$__OpenedProjects[$iProjectID][1] = $sFile
 	_TV_AssocInfo_Modify($__OpenedProjects[$iProjectID][2], "PROJECT|" & $iProjectID & "|" & $sFile)
 	; ---
-	Local $xml = _TV_ProjectToXML($__OpenedProjects[$iProjectID][2])
+	Local $xml = _TV_ProjectToXML(__OpenProject_GetItemHandle($iProjectID), $iProjectID)
 	; ---
 	FileDelete($sFile)
 	If Not FileWrite($sFile, $xml) Then
@@ -99,11 +116,16 @@ Func _Project_Save($iProjectID, $iSaveAs = 0)
 	Return 1
 EndFunc
 
+Func _Workspace_Save()
+	
+EndFunc
+
 ; ##############################################################
 
 Func _Project_Close($iProjectID)
-	ConsoleWrite("Project Close: " & $iProjectID & @CRLF)
-	If __OpenProject_IsModified($iProjectID) And _Ask(LNG("ask_save")) Then
+	If $iProjectID > $__OpenedProjects[0][0] Or $iProjectID <= 0 Then Return
+	; ---
+	If __OpenProject_IsModified($iProjectID) And _Ask(LNG("ask_save", __OpenProject_GetName($iProjectID))) Then
 		If Not _Project_Save($iProjectID) Then Return
 	EndIf
 	; ---
@@ -111,6 +133,9 @@ Func _Project_Close($iProjectID)
 	_TV_AssocInfo_Del($hItem)
 	_GuiCtrlTreeView_Delete($hTree, $hItem)
 	__OpenProject_Del($iProjectID)
+	; réinitialiser $__ActifProject pour qu'il n'y ait pas d'erreur
+	; d'index dans le array $__OpenedProjects
+	__SetActifProject()
 EndFunc
 
 ; ##############################################################
@@ -134,7 +159,11 @@ EndFunc
 Func __OpenProject_GetName($iProjectID)
 	If $iProjectID > $__OpenedProjects[0][0] Then Return SetError(1, 0, "")
 	; ---
-	Return $__OpenedProjects[$iProjectID][0]
+	If StringRight($__OpenedProjects[$iProjectID][0], 2) == " *" Then
+		Return StringTrimRight($__OpenedProjects[$iProjectID][0], 2)
+	Else
+		Return $__OpenedProjects[$iProjectID][0]
+	EndIf
 EndFunc
 
 Func __OpenProject_GetPath($iProjectID)
@@ -163,9 +192,11 @@ Func __OpenProject_SetModified($iProjectID, $iModified = 1)
 	; ---
 	Local $text = _GuiCtrlTreeView_GetText($hTree, $__OpenedProjects[$iProjectID][2])
 	If $iModified Then
-		_GuiCtrlTreeView_SetText($hTree, $__OpenedProjects[$iProjectID][2], $text & " *")
+		If StringRight($text, 2) <> " *" Then _
+			_GuiCtrlTreeView_SetText($hTree, $__OpenedProjects[$iProjectID][2], $text & " *")
 	Else
-		_GuiCtrlTreeView_SetText($hTree, $__OpenedProjects[$iProjectID][2], StringTrimRight($text, 2))
+		If StringRight($text, 2) == " *" Then _
+			_GuiCtrlTreeView_SetText($hTree, $__OpenedProjects[$iProjectID][2], StringTrimRight($text, 2))
 	EndIf
 	; ---
 	$__OpenedProjects[$iProjectID][3] = $iModified
@@ -191,9 +222,13 @@ EndFunc
 Func __SetActifProject($iID = Default)
 	If $iID <> Default Then
 		If $iID <> $__ActifProject Then
-			_GuiCtrlTreeView_SetBold($hTree, $__OpenedProjects[$__ActifProject][2], False)
-			$__ActifProject = $iID
-			_GuiCtrlTreeView_SetBold($hTree, $__OpenedProjects[$__ActifProject][2], True)
+			If $__ActifProject <= $__OpenedProjects[0][0] Then
+				_GuiCtrlTreeView_SetBold($hTree, $__OpenedProjects[$__ActifProject][2], False)
+				$__ActifProject = $iID
+				_GuiCtrlTreeView_SetBold($hTree, $__OpenedProjects[$__ActifProject][2], True)
+			Else
+				__SetActifProject()
+			EndIf
 		EndIf
 	Else
 		If $__OpenedProjects[0][0] > 0 Then

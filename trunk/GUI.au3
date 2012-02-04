@@ -25,9 +25,9 @@ Global $__hImgList
 ; GUI Main
 Global $GUI_Main, $hTree
 Global $Menu_File, _
-			$Menu_New, $Menu_Open, $Menu_Save, $Menu_SaveAs, $Menu_Close, $Menu_Exit
+			$Menu_New, $Menu_Open, $Menu_Save, $Menu_SaveAs, $Menu_SaveWorkspace, $Menu_Close, $Menu_CloseAll, $Menu_Exit
 Global $Menu_Edit, _
-			$Menu_AddFile, $Menu_AddFolder, $Menu_Delete
+			$Menu_SetActif, $Menu_AddFile, $Menu_AddFolder, $Menu_Delete
 Global $Menu_Misc, _
 			$Menu_Cfg, $Menu_About
 
@@ -35,26 +35,32 @@ Func _GUI_Main($flag = $__GUI_CREATE)
 	Switch $flag
 		Case $__GUI_CREATE
 			#Region ### START Koda GUI section ### Form=GUI_Main.kxf
-			$GUI_Main = GUICreate("SPM", 170, 442, 0, 0, -1, -1)
+			$GUI_Main = GUICreate("SPM", 170, 442, 5, 5, -1, -1)
 			; ---
 			$Menu_File = GUICtrlCreateMenu(LNG("Menu_File"))
 				$Menu_New = GUICtrlCreateMenuItem(LNG("Menu_New"), $Menu_File)
 				$Menu_Open = GUICtrlCreateMenuItem(LNG("Menu_Open"), $Menu_File)
+					GuiCtrlCreateMenuItem("", $Menu_File)
 				$Menu_Save = GUICtrlCreateMenuItem(LNG("Menu_Save"), $Menu_File)
 				$Menu_SaveAs = GUICtrlCreateMenuItem(LNG("Menu_SaveAs"), $Menu_File)
+				$Menu_SaveWorkspace = GUICtrlCreateMenuItem(LNG("Menu_SaveWorkspace"), $Menu_File)
+					GuiCtrlCreateMenuItem("", $Menu_File)
 				$Menu_Close = GUICtrlCreateMenuItem(LNG("Menu_Close"), $Menu_File)
+				$Menu_CloseAll = GUICtrlCreateMenuItem(LNG("Menu_CloseAll"), $Menu_File)
 					GuiCtrlCreateMenuItem("", $Menu_File)
 				$Menu_Exit = GUICtrlCreateMenuItem(LNG("Menu_Exit"), $Menu_File)
 			$Menu_Edit = GUICtrlCreateMenu(LNG("Menu_Edit"))
+				$Menu_SetActif = GUICtrlCreateMenuItem(LNG("Menu_SetActif"), $Menu_Edit)
+					GuiCtrlCreateMenuItem("", $Menu_Edit)
 				$Menu_AddFile = GUICtrlCreateMenuItem(LNG("Menu_AddFile"), $Menu_Edit)
-				;$Menu_AddNewFile = GUICtrlCreateMenuItem(LNG("Menu_AddNewFile"), $Menu_Edit)
 				$Menu_AddFolder = GUICtrlCreateMenuItem(LNG("Menu_AddFolder"), $Menu_Edit)
+					GuiCtrlCreateMenuItem("", $Menu_Edit)
 				$Menu_Delete = GUICtrlCreateMenuItem(LNG("Menu_Delete"), $Menu_Edit)
 			$Menu_Misc = GUICtrlCreateMenu(LNG("Menu_Misc"))
 				$Menu_Cfg = GUICtrlCreateMenuItem(LNG("Menu_Cfg"), $Menu_Misc)
 				$Menu_About = GUICtrlCreateMenuItem(LNG("Menu_About"), $Menu_Misc)
 			; ---
-			$hTree = _GUICtrlTreeView_Create($GUI_Main, 6, 6, 157, 409, BitOR($TVS_EDITLABELS, $TVS_HASBUTTONS, $TVS_HASLINES, $TVS_LINESATROOT, $TVS_DISABLEDRAGDROP, $TVS_SHOWSELALWAYS), $WS_EX_CLIENTEDGE)
+			$hTree = _GUICtrlTreeView_Create($GUI_Main, 6, 6, 157, 409, BitOR($TVS_HASBUTTONS, $TVS_HASLINES, $TVS_LINESATROOT, $TVS_SHOWSELALWAYS), $WS_EX_CLIENTEDGE)
 			; ---
 			$__hImgList = _GuiImageList_Create(16, 16, 5, 3)
 			_GuiImageList_AddIcon($__hImgList, $__ResDir & "\ico_project.ico")
@@ -66,6 +72,7 @@ Func _GUI_Main($flag = $__GUI_CREATE)
 			_GuiCtrlTreeView_SetNormalImageList($hTree, $__hImgList)
 			; ---
 			GUIRegisterMsg($WM_NOTIFY, "WM_NOTIFY")
+			GuiSetAccelerators(__GUI_Main_Accels())
 			#EndRegion ### END Koda GUI section ###
 		Case $__GUI_SHOW
 			GuiSetState(@SW_SHOW, $GUI_Main)
@@ -76,4 +83,19 @@ Func _GUI_Main($flag = $__GUI_CREATE)
 			GuiDelete($GUI_Main)
 			$GUI_Main = 0
 	EndSwitch
+EndFunc
+
+Func __GUI_Main_Accels()
+	Local $accels[8][2] = _
+		[ _
+			["^n", $Menu_New], _
+			["^o", $Menu_Open], _
+			["^s", $Menu_Save], _
+			["^+s", $Menu_SaveAs], _
+			["^q", $Menu_Close], _
+			["^a", $Menu_AddFile], _
+			["^f", $Menu_AddFolder], _
+			["{del}", $Menu_Delete] _
+		]
+	Return $accels
 EndFunc
