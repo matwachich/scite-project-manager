@@ -8,6 +8,7 @@
 	
 #ce ----------------------------------------------------------------------------
 #NoTrayIcon
+Opt("GUICloseOnEsc", 0)
 
 #include <Array.au3>
 #include <Misc.au3>
@@ -33,6 +34,7 @@ OnAutoItExitRegister("_OnExit")
 If Not @Compiled Then
 	HotKeySet("!t", "_Debug_ShowArray_TV")
 	HotKeySet("!p", "_Debug_ShowArray_Projects")
+	HotKeySet("!a", "_Debug_Show_ActifProject")
 EndIf
 
 While 1
@@ -40,15 +42,17 @@ While 1
 	Switch $nMsg
 		Case $GUI_EVENT_CLOSE, $Menu_Exit
 			Exit
-		Case $Menu_New
+		Case $Menu_New, $Btn_New
 			_Event_New()
-		Case $Menu_Open
+		Case $Menu_Open, $Btn_Open
 			_Event_Open()
 			; ---
-		Case $Menu_Save
+		Case $Menu_Save, $Btn_Save
 			_Event_Save()
 		Case $Menu_SaveAs
 			_Event_SaveAs()
+		Case $Menu_SaveWorkspace
+			_Event_SaveWorkspace()
 			; ---
 		Case $Menu_Close
 			_Event_Close()
@@ -57,14 +61,14 @@ While 1
 			; ---
 		Case $Menu_SetActif
 			_Event_SetActif()
-		Case $Menu_AddFile
+		Case $Menu_AddFile, $Btn_AddFile
 			_Event_AddFile()
-		Case $Menu_AddFolder
+		Case $Menu_AddFolder, $Btn_AddFolder
 			_Event_AddFolder()
-		Case $Menu_Delete
+		Case $Menu_Delete, $Btn_Delete
 			_Event_Delete()
 		; ---
-		Case $GUI_EVENT_MOUSEMOVE And $__TV_DragMode
+		Case $GUI_EVENT_MOUSEMOVE
 			__TV_HandleDrag()
 	EndSwitch
 WEnd
@@ -79,70 +83,90 @@ EndFunc   ;==>_OnExit
 
 Func WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
 	#forceref $hWnd, $iMsg, $iwParam
-	Local $hWndFrom, $iIDFrom, $iCode, $tNMHDR, $hWndTreeview, $Info
-	$hWndTreeview = $hTree
-	If Not IsHWnd($hTree) Then $hWndTreeview = GUICtrlGetHandle($hTree)
+	Local $hWndFrom, $iCode, $tNMHDR, $Info ; TreeView & ToolBar
+	Local $tNMTBHOTITEM, $i_idNew ; ToolBar Only
+	Local $tInfo, $iID ; ToolTips Only
 
 	$tNMHDR = DllStructCreate($tagNMHDR, $ilParam)
 	$hWndFrom = HWnd(DllStructGetData($tNMHDR, "hWndFrom"))
-	$iIDFrom = DllStructGetData($tNMHDR, "IDFrom")
 	$iCode = DllStructGetData($tNMHDR, "Code")
 	
 	Switch $hWndFrom
-		Case $hWndTreeview
+		; TreeView
+		Case $__hTree
 			Switch $iCode
-				;Case $NM_CLICK
-					
+				;Case $NM_CLICK	
 				;	Return 0
 				Case $NM_DBLCLK
-					_Event_TV_DblClick(_GUICtrlTreeView_GetSelection($hTree))
+					_Event_TV_DblClick(_GUICtrlTreeView_GetSelection($__hTree))
 					Return 0
 				;Case $NM_RCLICK
-				;	_Event_TV_RightClick(_GUICtrlTreeView_GetSelection($hTree))
 				;	Return 0
 				;Case $NM_RDBLCLK
-				;	
 				;	Return 0
-					; ---
+				; ---
 				Case $TVN_BEGINDRAGA, $TVN_BEGINDRAGW
 					$__TV_Drag_hItem = __TV_MouseItem()
 					If $__TV_Drag_hItem Then
 						$Info = _TV_ItemGetInfo($__TV_Drag_hItem)
 						If $Info[1] = "FILE" Then
 							$__TV_DragMode = 1
+							;ConsoleWrite("Drag ON" & @CRLF)
 						Else
 							$__TV_Drag_hItem = 0
 						EndIf
 					EndIf
-					#cs
-						Case $TVN_BEGINLABELEDITA, $TVN_BEGINLABELEDITW
-						_DebugPrint("$TVN_BEGINLABELEDIT")
-						Case $TVN_BEGINRDRAGA, $TVN_BEGINRDRAGW
-						_DebugPrint("$TVN_BEGINRDRAG")
-						Case $TVN_DELETEITEMA, $TVN_DELETEITEMW
-						_DebugPrint("$TVN_DELETEITEM")
-						Case $TVN_ENDLABELEDITA, $TVN_ENDLABELEDITW
-						_DebugPrint("$TVN_ENDLABELEDIT")
-						Case $TVN_GETDISPINFOA, $TVN_GETDISPINFOW
-						_DebugPrint("$TVN_GETDISPINFO")
-						Case $TVN_GETINFOTIPA, $TVN_GETINFOTIPW
-						_DebugPrint("$TVN_GETINFOTIP")
-						Case $TVN_ITEMEXPANDEDA, $TVN_ITEMEXPANDEDW
-						_DebugPrint("$TVN_ITEMEXPANDED")
-						Case $TVN_ITEMEXPANDINGA, $TVN_ITEMEXPANDINGW
-						_DebugPrint("$TVN_ITEMEXPANDING")
-						Case $TVN_KEYDOWN
-						_DebugPrint("$TVN_KEYDOWN")
-						Case $TVN_SELCHANGEDA, $TVN_SELCHANGEDW
-						_DebugPrint("$TVN_SELCHANGED")
-						Case $TVN_SELCHANGINGA, $TVN_SELCHANGINGW
-						_DebugPrint("$TVN_SELCHANGING")
-						Case $TVN_SETDISPINFOA, $TVN_SETDISPINFOW
-						_DebugPrint("$TVN_SETDISPINFO")
-						Case $TVN_SINGLEEXPAND
-						_DebugPrint("$TVN_SINGLEEXPAND")
-					#ce
 			EndSwitch
+			Return $GUI_RUNDEFMSG
+		; ##############################################################
+		; ToolBar
+		Case $__hToolBar
+			Switch $iCode
+				Case $NM_LDOWN
+					ConsoleWrite("$NM_LDOWN: Clicked Item: " & $__hToolBar_HotItem & @CRLF)
+					Switch $__hToolBar_HotItem
+						Case $Btn_New
+							_Event_New()
+						Case $Btn_Open
+							_Event_Open()
+						Case $Btn_Save
+							_Event_Save()
+						Case $Btn_AddFile
+							_Event_AddFile()
+						Case $Btn_AddFolder
+							_Event_AddFolder()
+						Case $Btn_Delete
+							_Event_Delete()
+					EndSwitch
+				Case $TBN_HOTITEMCHANGE
+					$tNMTBHOTITEM = DllStructCreate($tagNMTBHOTITEM, $ilParam)
+					$i_idNew = DllStructGetData($tNMTBHOTITEM, "idNew")
+					$__hToolBar_HotItem = $i_idNew
+			EndSwitch
+			Return $GUI_RUNDEFMSG
 	EndSwitch
+	
+	; ##############################################################
+	; ToolTips
+	$tInfo = DllStructCreate($tagNMTTDISPINFO, $ilParam)
+	$iCode = DllStructGetData($tInfo, "Code")
+	If $iCode = $TTN_GETDISPINFOW Then
+		$iID = DllStructGetData($tInfo, "IDFrom")
+		Switch $iID
+			Case $Btn_New
+				DllStructSetData($tInfo, "aText", StringReplace(LNG("Menu_New"), @TAB, " "))
+			Case $Btn_Open
+				DllStructSetData($tInfo, "aText", StringReplace(LNG("Menu_Open"), @TAB, " "))
+			Case $Btn_Save
+				DllStructSetData($tInfo, "aText", StringReplace(LNG("Menu_Save"), @TAB, " "))
+			Case $Btn_AddFile
+				DllStructSetData($tInfo, "aText", StringReplace(LNG("Menu_AddFile"), @TAB, " "))
+			Case $Btn_AddFolder
+				DllStructSetData($tInfo, "aText", StringReplace(LNG("Menu_AddFolder"), @TAB, " "))
+			Case $Btn_Delete
+				DllStructSetData($tInfo, "aText", StringReplace(LNG("Menu_Delete"), @TAB, " "))
+		EndSwitch
+	EndIf
+	
 	Return $GUI_RUNDEFMSG
 EndFunc   ;==>WM_NOTIFY

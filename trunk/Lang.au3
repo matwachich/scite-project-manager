@@ -4,7 +4,7 @@
  Author:         Matwachich
 
  Script Function:
-	
+
 
 #ce ----------------------------------------------------------------------------
 #Include-Once
@@ -26,7 +26,7 @@ Func __Lang_LoadDefault()
 	; GUI Main
 	__LNG_Add("Menu_File",			"&File")
 	__LNG_Add("Menu_New",			"New Project	(Ctrl+N)")
-	__LNG_Add("Menu_Open",			"Open Project	(Ctrl+O)")
+	__LNG_Add("Menu_Open",			"Open Project/Workspace	(Ctrl+O)")
 	__LNG_Add("Menu_Save",			"Save Project	(Ctrl+S)")
 	__LNG_Add("Menu_SaveAs",		"Save Project As	(Ctrl+Shift+S)")
 	__LNG_Add("Menu_SaveWorkspace",	"Save Current Workspace")
@@ -58,6 +58,7 @@ Func __Lang_LoadDefault()
 	; Errors
 	__LNG_Add("err_cannotSave",		"Impossible to save to the specified file.")
 	__LNG_Add("err_invalidFile",	"The file specified is invalid:" & @CRLF & "%s")
+	__LNG_Add("err_drag_Folder",	"The folder that you want to drag contains another folder." & @CRLF & "Impossible to continue")
 EndFunc
 ; ---
 

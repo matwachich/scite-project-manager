@@ -72,9 +72,13 @@ EndFunc   ;==>XML_getDisplayName
 ; Debug
 
 Func _Debug_ShowArray_TV()
-	_ArrayDisplay($__TV_Assoc)
+	_ArrayDisplay($__TV_Assoc, "$__TV_Assoc")
 EndFunc
 
 Func _Debug_ShowArray_Projects()
-	_ArrayDisplay($__OpenedProjects)
+	_ArrayDisplay($__OpenedProjects, "$__OpenedProjects")
+EndFunc
+
+Func _Debug_Show_ActifProject()
+	ConsoleWrite("!!! DEBUG: $__ActifProject = " & $__ActifProject & @CRLF)
 EndFunc
