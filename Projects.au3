@@ -9,10 +9,11 @@
 #ce ----------------------------------------------------------------------------
 #Include-Once
 
-Global $__OpenedProjects[1][4] = [[0, "", "", ""]] ; name, path, $hCtrl, $iModified
+Global $__OpenedProjects[1][4] = [[0, "sPath", "hCtrl", "iModified"]] ; name, path, $hCtrl, $iModified
 Global $__ActifProject = 0
 
 #include <Array.au3>
+#include <String.au3>
 
 Func _LoadWorkspace($sFile)
 	Local $oXml = ObjCreate("Microsoft.XMLDOM")
@@ -39,6 +40,7 @@ Func _LoadProject($sFile)
 	Local $projects = $oXml.SelectNodes("/Project")
 	If Not IsObj($projects) Then Return SetError(2, 0, 0)
 	; ---
+	; $aToExpend contiendra tous les Elements à Expand à la fin de l'ouverture
 	Local $prjName, $hCtrl, $iProjectID, $aToExpend[1], $tmp
 	For $elem In $projects
 		ReDim $aToExpend[1]
@@ -47,7 +49,7 @@ Func _LoadProject($sFile)
 		$prjName = _XML_getDisplayName($elem)
 		If __OpenProject_IsOpen($prjName, $sFile) Then ContinueLoop
 		; ---
-		$hCtrl = _TV_Add($prjName, "project", $hTree, $sFile)
+		$hCtrl = _TV_Add($prjName, "project", $__hTree, $sFile)
 		; ---
 		$tmp = $elem.GetAttribute("exp")
 		If $tmp == "True" Then
@@ -61,8 +63,9 @@ Func _LoadProject($sFile)
 		__BuildSubTreeView($elem, $hCtrl, $iProjectID, $aToExpend)
 		; ---
 		__TV_ExpandItems($aToExpend)
+		; ---
+		_GuiCtrlTreeView_EnsureVisible($__hTree, $hCtrl)
 	Next
-	;_ArrayDisplay($aToExpend)
 EndFunc
 
 Func __BuildSubTreeView($hNode, $hCtrl, $iProjectID, ByRef $aToExpend)
@@ -92,7 +95,7 @@ EndFunc
 ; ##############################################################
 
 Func _Project_Save($iProjectID, $iSaveAs = 0)
-	Local $sFile = $__OpenedProjects[$iProjectID][1]
+	Local $sFile = __OpenProject_GetPath($iProjectID)
 	; ---
 	If $iSaveAs Or Not $sFile Then
 		$sFile = FileSaveDialog(LNG("prompt_save", $__OpenedProjects[$iProjectID][0]), @WorkingDir, "Au3 Project (*.auproj)", 16, "", $GUI_Main)
@@ -116,10 +119,6 @@ Func _Project_Save($iProjectID, $iSaveAs = 0)
 	Return 1
 EndFunc
 
-Func _Workspace_Save()
-	
-EndFunc
-
 ; ##############################################################
 
 Func _Project_Close($iProjectID)
@@ -131,29 +130,28 @@ Func _Project_Close($iProjectID)
 	; ---
 	Local $hItem = __OpenProject_GetItemHandle($iProjectID)
 	_TV_AssocInfo_Del($hItem)
-	_GuiCtrlTreeView_Delete($hTree, $hItem)
+	_GuiCtrlTreeView_Delete($__hTree, $hItem)
 	__OpenProject_Del($iProjectID)
-	; réinitialiser $__ActifProject pour qu'il n'y ait pas d'erreur
-	; d'index dans le array $__OpenedProjects
-	__SetActifProject()
 EndFunc
 
 ; ##############################################################
 
+; $iModified est mis a 1 dans _Event_New (nouveau projet)
 Func __OpenProject_Add($sName, $sPath, $CtrlID, $iModified = 0)
-	ReDim $__OpenedProjects[$__OpenedProjects[0][0] + 2][4]
-	$__OpenedProjects[0][0] += 1
-	$__OpenedProjects[$__OpenedProjects[0][0]][0] = $sName
-	$__OpenedProjects[$__OpenedProjects[0][0]][1] = $sPath
-	$__OpenedProjects[$__OpenedProjects[0][0]][2] = $CtrlID
-	;$__OpenedProjects[$__OpenedProjects[0][0]][3] = $iModified
+	Local $index = __OpenProject_Internal_GetSlot()
+	;ConsoleWrite("ADD project: " & $sName & " -> " & $index & @CRLF)
+	; ---
+	$__OpenedProjects[$index][0] = $sName
+	$__OpenedProjects[$index][1] = $sPath
+	$__OpenedProjects[$index][2] = $CtrlID
+	;$__OpenedProjects[$index][3] = $iModified
 	; on fait ça pour que la petite étoile se mette en place à coté du nom du projet
 	; si celui ci est nouveau
-	__OpenProject_SetModified($__OpenedProjects[0][0], $iModified)
+	__OpenProject_SetModified($index, $iModified)
 	; ---
-	If $__ActifProject = 0 Then __SetActifProject($__OpenedProjects[0][0])
+	If $__ActifProject = 0 Then __SetActifProject($index)
 	; ---
-	Return $__OpenedProjects[0][0]
+	Return $index
 EndFunc
 
 Func __OpenProject_GetName($iProjectID)
@@ -190,13 +188,13 @@ Func __OpenProject_SetModified($iProjectID, $iModified = 1)
 	; ---
 	;ConsoleWrite("Set Modified: " & $iProjectID & " = " & $iModified & @CRLF)
 	; ---
-	Local $text = _GuiCtrlTreeView_GetText($hTree, $__OpenedProjects[$iProjectID][2])
+	Local $text = _GuiCtrlTreeView_GetText($__hTree, $__OpenedProjects[$iProjectID][2])
 	If $iModified Then
 		If StringRight($text, 2) <> " *" Then _
-			_GuiCtrlTreeView_SetText($hTree, $__OpenedProjects[$iProjectID][2], $text & " *")
+			_GuiCtrlTreeView_SetText($__hTree, $__OpenedProjects[$iProjectID][2], $text & " *")
 	Else
 		If StringRight($text, 2) == " *" Then _
-			_GuiCtrlTreeView_SetText($hTree, $__OpenedProjects[$iProjectID][2], StringTrimRight($text, 2))
+			_GuiCtrlTreeView_SetText($__hTree, $__OpenedProjects[$iProjectID][2], StringTrimRight($text, 2))
 	EndIf
 	; ---
 	$__OpenedProjects[$iProjectID][3] = $iModified
@@ -206,8 +204,12 @@ EndFunc
 Func __OpenProject_Del($iProjectID)
 	If $iProjectID > $__OpenedProjects[0][0] Then Return SetError(1, 0, -1)
 	; ---
-	_ArrayDelete($__OpenedProjects, $iProjectID)
-	$__OpenedProjects[0][0] -= 1
+	; Reset le Slot
+	For $i = 0 To 3
+		$__OpenedProjects[$iProjectID][$i] = ""
+	Next
+	; ---
+	__OpenProject_Internal_CleanEmptySlots()
 EndFunc
 
 Func __OpenProject_IsOpen($sName, $sPath)
@@ -217,9 +219,59 @@ Func __OpenProject_IsOpen($sName, $sPath)
 	Return 0
 EndFunc
 
+Func __OpenProject_Internal_GetSlot()
+	__OpenProject_Internal_CleanEmptySlots()
+	; ---
+	For $i = 1 To $__OpenedProjects[0][0]
+		If Not $__OpenedProjects[$i][0] Then Return $i
+	Next
+	; ---
+	;_ArrayDisplay($__OpenedProjects, "Befor Redim")
+	Redim $__OpenedProjects[$__OpenedProjects[0][0] + 2][4]
+	$__OpenedProjects[0][0] += 1
+	;_ArrayDisplay($__OpenedProjects, "After Redim")
+	Return $__OpenedProjects[0][0]
+EndFunc
+
+Func __OpenProject_Internal_CleanEmptySlots()
+	;_ArrayDisplay($__OpenedProjects, "Befor Clean")
+	For $i = $__OpenedProjects[0][0] To 1 Step -1
+		If $__OpenedProjects[$i][0] Then ExitLoop
+		; ---
+		_ArrayDelete($__OpenedProjects, $i)
+		$__OpenedProjects[0][0] -= 1
+	Next
+	;_ArrayDisplay($__OpenedProjects, "After Clean")
+EndFunc
+
+Func __OpenProject_Internal_GetFirstUsedSlot()
+	For $i = 1 To $__OpenedProjects[0][0]
+		If $__OpenedProjects[$i][0] Then Return $i
+	Next
+	Return 0
+EndFunc
+
 ; ##############################################################
 
 Func __SetActifProject($iID = Default)
+	If $iID <> Default Then
+		If $iID <> 0 And ($iID > $__OpenedProjects[0][0] Or $iID <= 0) Then Return
+	EndIf
+	; ---
+	If $iID = Default Then
+		$__ActifProject = __OpenProject_Internal_GetFirstUsedSlot()
+		If $__ActifProject > 0 Then __SetActifProject($__ActifProject)
+	Else
+		ConsoleWrite("__SetActifProject(" & $iID & ") - " & __OpenProject_GetName($iID) & @CRLF)
+		If $__OpenedProjects[$__ActifProject][0] Then _
+			_GuiCtrlTreeView_SetBold($__hTree, $__OpenedProjects[$__ActifProject][2], False)
+		; ---
+		$__ActifProject = $iID
+		_GuiCtrlTreeView_SetBold($__hTree, $__OpenedProjects[$__ActifProject][2], True)
+		;ConsoleWrite("Set Bold: " & $__OpenedProjects[$__ActifProject][0] & @CRLF)
+	EndIf
+	#cs
+	; ---
 	If $iID <> Default Then
 		If $iID <> $__ActifProject Then
 			If $__ActifProject <= $__OpenedProjects[0][0] Then
@@ -237,4 +289,5 @@ Func __SetActifProject($iID = Default)
 			$__ActifProject = 0
 		EndIf
 	EndIf
+	#ce
 EndFunc

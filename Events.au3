@@ -19,7 +19,7 @@ Func _Event_New()
 	If @error Or Not $sPath then Return
 	FileDelete($sPath)
 	; ---
-	Local $hCtrl = _TV_Add($prjName, "PROJECT", $hTree, $sPath, "")
+	Local $hCtrl = _TV_Add($prjName, "PROJECT", $__hTree, $sPath, "")
 	Local $iProjectID = __OpenProject_Add($prjName, $sPath, $hCtrl, 1) ; modified = 1 (new project)
 	_TV_ItemSetInfo($hCtrl, "PROJECT|" & $iProjectID & "|" & $sPath)
 EndFunc
@@ -35,6 +35,8 @@ Func _Event_Open()
 	Next
 EndFunc
 
+; ##############################################################
+
 Func _Event_Save()
 	If $__ActifProject = 0 Then Return
 	; ---
@@ -47,6 +49,25 @@ Func _Event_SaveAs()
 	_Project_Save($__ActifProject, 1)
 EndFunc
 
+Func _Event_SaveWorkspace()
+	If $__OpenedProjects[0][0] = 0 Then Return
+	; ---
+	Local $file = FileSaveDialog(LNG("prompt_saveWorkspace"), @Workingdir, "Au3 Workspace (*.auwork)", 18, "", $GUI_Main)
+	If @error Or Not $file Then Return
+	If StringRight($file, 7) <> ".auwork" Then $file &= ".auwork"
+	; ---
+	Local $dir = _File_GetPath($file), $xml = '<Workspace name="Au3 Workspace">'
+	For $i = 1 To $__OpenedProjects[0][0]
+		$xml &= '<Project path="' & _PathGetRelative($dir, __OpenProject_GetPath($i)) & '"></Project>'
+	Next
+	$xml &= '</Workspace>'
+	; ---
+	FileDelete($file)
+	FileWrite($file, $xml)
+EndFunc
+
+; ##############################################################
+
 Func _Event_Close($All = 0)
 	If $__ActifProject = 0 Then Return
 	; ---
@@ -57,12 +78,14 @@ Func _Event_Close($All = 0)
 	Else
 		_Project_Close($__ActifProject)
 	EndIf
+	; ---
+	__SetActifProject()
 EndFunc
 
 ; ##############################################################
 
 Func _Event_SetActif()
-	Local $hItem = _GuiCtrlTreeView_GetSelection($hTree)
+	Local $hItem = _GuiCtrlTreeView_GetSelection($__hTree)
 	If Not $hItem Then Return
 	; ---
 	Local $Info = _TV_ItemGetInfo($hItem)
@@ -70,7 +93,8 @@ Func _Event_SetActif()
 EndFunc
 
 Func _Event_AddFile()
-	If $__ActifProject = 0 Then Return
+	;If $__ActifProject = 0 Then Return
+	If $__OpenedProjects[0][0] = 0 Then Return
 	; ---
 	;Local $sPrjPath = _File_GetPath(__OpenProject_GetPath($__ActifProject))
 	; juste au cas ou
@@ -82,24 +106,26 @@ Func _Event_AddFile()
 	; ---
 	Local $hItemToAdd = 0, $Info
 	; ---
-	Local $hSelItem = _GuiCtrlTreeView_GetSelection($hTree)
+	Local $hSelItem = _GuiCtrlTreeView_GetSelection($__hTree)
 	If $hSelItem Then
 		$Info = _TV_ItemGetInfo($hSelItem)
 		Switch $Info[1]
 			Case "project", "folder"
 				$hItemToAdd = $hSelItem
 			Case "file"
-				$hItemToAdd = _GuiCtrlTreeView_GetParentHandle($hTree, $hSelItem)
+				$hItemToAdd = _GuiCtrlTreeView_GetParentHandle($__hTree, $hSelItem)
 		EndSwitch
 	Else
 		$hItemToAdd = __OpenProject_GetItemHandle($__ActifProject)
 	EndIf
 	; ---
+	If Not $hItemToAdd Then Return
+	; ---
 	; C'est pas $__ActifProject que l'on modifie, mais le projet du Item selectionné, qui peut correspondre
 	; au $__ActifProject, mais pas forcément
 	; Ne sert à rien: Toujours: hSelItem et $ItemToAdd auront le même ProjectID
 	;$Info = 0
-	;$Info = _TV_ItemGetInfo($hItemToAdd)
+	$Info = _TV_ItemGetInfo($hItemToAdd)
 	; ---
 	; traitement du chemin du fichier
 	Local $projPath = _File_GetPath(__OpenProject_GetPath($Info[2]))
@@ -115,32 +141,35 @@ Func _Event_AddFile()
 EndFunc
 
 Func _Event_AddFolder()
-	If $__ActifProject = 0 Then Return
+	;If $__ActifProject = 0 Then Return
+	If $__OpenedProjects[0][0] = 0 Then Return
 	; ---
 	Local $sName = InputBox(LNG("ProgName"), LNG("promp_addFolder"))
 	If Not $sName Or @error Then Return
 	; ---
 	Local $hSelItem, $hItemToAdd, $Info
-	$hSelItem = _GuiCtrlTreeView_GetSelection($hTree)
+	$hSelItem = _GuiCtrlTreeView_GetSelection($__hTree)
 	If $hSelItem <> 0 Then
 		$Info = _TV_ItemGetInfo($hSelItem)
 		Switch $Info[1]
 			Case "folder", "project"
 				$hItemToAdd = $hSelItem
 			Case "file"
-				$hItemToAdd = _GuiCtrlTreeView_GetParentHandle($hTree, $hSelItem)
+				$hItemToAdd = _GuiCtrlTreeView_GetParentHandle($__hTree, $hSelItem)
 		EndSwitch
 	Else
 		$hItemToAdd = __OpenProject_GetItemHandle($__ActifProject)
 	EndIf
+	; ---
+	If Not $hItemToAdd Then Return
 	; ---
 	_TV_Add($sName, "folder", $hItemToAdd, "", $Info[2])
 	__OpenProject_SetModified($Info[2], 1)
 EndFunc
 
 Func _Event_Delete()
-	Local $hItem = _GuiCtrlTreeView_GetSelection($hTree)
-	If $hItem = 0 Then Return
+	Local $hItem = _GuiCtrlTreeView_GetSelection($__hTree)
+	If Not $hItem Then Return
 	; ---
 	Local $Info = _TV_ItemGetInfo($hItem)
 	Switch $Info[1]
@@ -153,7 +182,7 @@ Func _Event_Delete()
 			; ils seront tous supprimés
 			If _Ask(LNG("ask_delete" & $Info[1], $Info[0])) Then
 				_TV_AssocInfo_Del($hItem)
-				_GuiCtrlTreeView_Delete($hTree, $hItem)
+				_GuiCtrlTreeView_Delete($__hTree, $hItem)
 				; ---
 				__OpenProject_SetModified($Info[2], 1)
 			EndIf
