@@ -29,9 +29,13 @@ Func __Lang_LoadDefault()
 	__LNG_Add("Menu_Open",			"Open Project/Workspace	(Ctrl+O)")
 	__LNG_Add("Menu_Save",			"Save Project	(Ctrl+S)")
 	__LNG_Add("Menu_SaveAs",		"Save Project As	(Ctrl+Shift+S)")
+	__LNG_Add("Menu_SaveAll",		"Save All Projects")
 	__LNG_Add("Menu_SaveWorkspace",	"Save Current Workspace")
 	__LNG_Add("Menu_Close",			"Close Active Project	(Ctrl+Q)")
 	__LNG_Add("Menu_CloseAll",		"Close All Projects")
+	__LNG_Add("Menu_LastProject",	"Last Projects")
+	__LNG_Add("Menu_LastWorkspace",	"Last Workspaces")
+	__LNG_Add("Menu_Last_Flush",	"Empty List")
 	__LNG_Add("Menu_Exit",			"Exit")
 	__LNG_Add("Menu_Edit",			"&Edit")
 	__LNG_Add("Menu_SetActif",		"Set Actif Project")
@@ -63,20 +67,24 @@ EndFunc
 ; ---
 
 Func LNG($sID, $var1 = "", $var2 = "", $var3 = "", $var4 = "", $var5 = "")
+	Local $ret
 	Switch @NumParams
 		Case 2
-			Return StringFormat(_SD_Get($oLangDic, StringLower($sID)), $var1)
+			$ret = StringFormat(_SD_Get($oLangDic, StringLower($sID)), $var1)
 		Case 3
-			Return StringFormat(_SD_Get($oLangDic, StringLower($sID)), $var1, $var2)
+			$ret = StringFormat(_SD_Get($oLangDic, StringLower($sID)), $var1, $var2)
 		Case 4
-			Return StringFormat(_SD_Get($oLangDic, StringLower($sID)), $var1, $var2, $var3)
+			$ret = StringFormat(_SD_Get($oLangDic, StringLower($sID)), $var1, $var2, $var3)
 		Case 5
-			Return StringFormat(_SD_Get($oLangDic, StringLower($sID)), $var1, $var2, $var3, $var4)
+			$ret = StringFormat(_SD_Get($oLangDic, StringLower($sID)), $var1, $var2, $var3, $var4)
 		Case 6
-			Return StringFormat(_SD_Get($oLangDic, StringLower($sID)), $var1, $var2, $var3, $var4, $var5)
+			$ret = StringFormat(_SD_Get($oLangDic, StringLower($sID)), $var1, $var2, $var3, $var4, $var5)
 		Case Else
-			Return _SD_Get($oLangDic, StringLower($sID))
+			$ret = _SD_Get($oLangDic, StringLower($sID))
 	EndSwitch
+	; ---
+	; ConsoleWrite('LNG("' & $sID & '") - ' & @error & ' = ' & $ret & @CRLF)
+	Return $ret
 EndFunc
 
 ; ##############################################################

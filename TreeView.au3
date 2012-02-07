@@ -38,7 +38,7 @@ Func _TV_Add($sText, $sType, $hParent, $sPath = "", $iProjectID = "")
 			$hCtrl = _GuiCtrlTreeView_AddChild($__hTree, $hParent, $sText, $iIco, $iIco)
 			_TV_ItemSetInfo($hCtrl, "FILE|" & $iProjectID & "|" & $sPath, $iProjectID)
 		Case "folder"
-			$hCtrl = _GuiCtrlTreeView_InsertItem($__hTree, $sText, $hParent, _GuiCtrlTreeView_GetFirstChild($__hTree, $hParent), 1, 1)
+			$hCtrl = _GuiCtrlTreeView_InsertItem($__hTree, $sText, $hParent, $hParent, 1, 1)
 			_TV_ItemSetInfo($hCtrl, "FOLDER|" & $iProjectID, $iProjectID)
 	EndSwitch
 	; ---

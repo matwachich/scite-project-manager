@@ -66,20 +66,30 @@ Func _Event_SaveWorkspace()
 	FileWrite($file, $xml)
 EndFunc
 
+Func _Event_SaveAll()
+	For $i = 1 To $__OpenedProjects[0][0]
+		If __OpenProject_IDIsValid($i) Then _Project_Save($i)
+	Next
+EndFunc
+
 ; ##############################################################
 
-Func _Event_Close($All = 0)
-	If $__ActifProject = 0 Then Return
+; iDontSave est utile pour lors de la fermeture du programme, pour ne pas demander
+; 2 fois d'enregistrer un projet modifié
+Func _Event_Close($All = 0, $iDontSave = 0)
+	If $__ActifProject = 0 Then Return 1
 	; ---
 	If $All Then
 		For $i = $__OpenedProjects[0][0] To 1 Step -1
-			_Project_Close($i)
+			If Not _Project_Close($i, $iDontSave) Then Return 0
 		Next
 	Else
-		_Project_Close($__ActifProject)
+		If Not _Project_Close($__ActifProject, $iDontSave) Then Return 0
 	EndIf
 	; ---
 	__SetActifProject()
+	; ---
+	Return 1
 EndFunc
 
 ; ##############################################################
@@ -100,7 +110,7 @@ Func _Event_AddFile()
 	; juste au cas ou
 	;If Not $sPrjPath Then $sPrjPath = @WorkingDir
 	; ---
-	Local $sPath = FileOpenDialog(LNG("promp_addFile"), @WorkingDir, "AutoIt3 Script (*.au3)|All (*.*)", 15, "", $GUI_Main)
+	Local $sPath = FileOpenDialog(LNG("prompt_addFile"), @WorkingDir, "AutoIt3 Script (*.au3)|All (*.*)", 15, "", $GUI_Main)
 	If Not $sPath Or @error Then Return 0
 	$sPath = _FileOpenDialog_ParseMultiple($sPath)
 	; ---
@@ -144,7 +154,7 @@ Func _Event_AddFolder()
 	;If $__ActifProject = 0 Then Return
 	If $__OpenedProjects[0][0] = 0 Then Return
 	; ---
-	Local $sName = InputBox(LNG("ProgName"), LNG("promp_addFolder"))
+	Local $sName = InputBox(LNG("ProgName"), LNG("prompt_addFolder"))
 	If Not $sName Or @error Then Return
 	; ---
 	Local $hSelItem, $hItemToAdd, $Info
