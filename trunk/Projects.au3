@@ -25,6 +25,8 @@ Func _LoadWorkspace($sFile)
 	; ---
 	Local $projects
 	For $elem In $workSpace
+		_Last_Add(2, $sFile)
+		; ---
 		$projects = $elem.SelectNodes("Project")
 		For $prj In $projects
 			_LoadProject(_File_GetPath($sFile) & "\" & $prj.getAttribute("path"))
@@ -43,6 +45,8 @@ Func _LoadProject($sFile)
 	; $aToExpend contiendra tous les Elements à Expand à la fin de l'ouverture
 	Local $prjName, $hCtrl, $iProjectID, $aToExpend[1], $tmp
 	For $elem In $projects
+		_Last_Add(1, $sFile)
+		; ---
 		ReDim $aToExpend[1]
 		$aToExpend[0] = 0
 		; ---
@@ -66,6 +70,7 @@ Func _LoadProject($sFile)
 		; ---
 		_GuiCtrlTreeView_EnsureVisible($__hTree, $hCtrl)
 	Next
+	; cette boucle ne sert pas à grand chose, car il n'y a qu'un seul projet par fichier
 EndFunc
 
 Func __BuildSubTreeView($hNode, $hCtrl, $iProjectID, ByRef $aToExpend)
@@ -119,19 +124,54 @@ Func _Project_Save($iProjectID, $iSaveAs = 0)
 	Return 1
 EndFunc
 
+; utilisé lors de la fermeture du programme
+Func _Project_SaveAll()
+	If $__OpenedProjects[0][0] = 0 Then Return 1
+	; ---
+	For $i = 1 To $__OpenedProjects[0][0]
+		If __OpenProject_IsModified($i) Then
+			Switch MsgBox(35, LNG("ProgName"), LNG("ask_save", __OpenProject_GetName($i)))
+				Case 6 ;yes
+					If Not _Project_Save($i) Then Return 0
+				Case 7 ;no
+					; rien, on continue la fermeture
+				Case 2 ;cancel
+					Return 0
+			EndSwitch
+		EndIf
+	Next
+	; ---
+	Return 1
+EndFunc
+
 ; ##############################################################
 
-Func _Project_Close($iProjectID)
+; iDontSave est utile pour lors de la fermeture du programme, pour ne pas demander
+; 2 fois d'enregistrer un projet modifié
+Func _Project_Close($iProjectID, $iDontSave = 0)
 	If $iProjectID > $__OpenedProjects[0][0] Or $iProjectID <= 0 Then Return
 	; ---
-	If __OpenProject_IsModified($iProjectID) And _Ask(LNG("ask_save", __OpenProject_GetName($iProjectID))) Then
-		If Not _Project_Save($iProjectID) Then Return
+	If Not $iDontSave And __OpenProject_IsModified($iProjectID) Then
+		Switch MsgBox(35, LNG("ProgName"), LNG("ask_save", __OpenProject_GetName($iProjectID)))
+			Case 6 ;yes
+				If Not _Project_Save($iProjectID) Then Return 0
+			Case 7 ;no
+				; rien, on continue la fermeture
+			Case 2 ;cancel
+				Return 0
+		EndSwitch
 	EndIf
+	; ---
+	;If __OpenProject_IsModified($iProjectID) And _Ask(LNG("ask_save", __OpenProject_GetName($iProjectID))) Then
+	;	If Not _Project_Save($iProjectID) Then Return
+	;EndIf
 	; ---
 	Local $hItem = __OpenProject_GetItemHandle($iProjectID)
 	_TV_AssocInfo_Del($hItem)
 	_GuiCtrlTreeView_Delete($__hTree, $hItem)
 	__OpenProject_Del($iProjectID)
+	; ---
+	Return 1
 EndFunc
 
 ; ##############################################################
@@ -217,6 +257,12 @@ Func __OpenProject_IsOpen($sName, $sPath)
 		If $__OpenedProjects[$i][0] = $sName And $__OpenedProjects[$i][1] = $sPath Then Return 1
 	Next
 	Return 0
+EndFunc
+
+Func __OpenProject_IDIsValid($iProjectID)
+	If $iProjectID > $__OpenedProjects[0][0] Then Return SetError(1, 0, 0)
+	; ---
+	Return $__OpenedProjects[$iProjectID][0] <> ""
 EndFunc
 
 Func __OpenProject_Internal_GetSlot()

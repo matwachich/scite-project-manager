@@ -31,7 +31,11 @@ Global $__hTree, $__hTreeView_ImageList
 Global $__hToolBar, $__hToolBar_ImageList, $__hToolTip, $__hToolBar_HotItem
 ; ---
 Global $Menu_File, _
-			$Menu_New, $Menu_Open, $Menu_Save, $Menu_SaveAs, $Menu_SaveWorkspace, $Menu_Close, $Menu_CloseAll, $Menu_Exit
+			$Menu_New, $Menu_Open, $Menu_Save, $Menu_SaveAs, $Menu_SaveAll, $Menu_SaveWorkspace, $Menu_Close, $Menu_CloseAll, $Menu_Exit, _
+			$Menu_LastProject, _
+				$Menu_LastProject_Flush, _
+			$Menu_LastWorkspace, _
+				$Menu_LastWorkspace_Flush
 Global $Menu_Edit, _
 			$Menu_SetActif, $Menu_AddFile, $Menu_AddFolder, $Menu_Delete
 Global $Menu_Misc, _
@@ -49,10 +53,18 @@ Func _GUI_Main($flag = $__GUI_CREATE)
 					GuiCtrlCreateMenuItem("", $Menu_File)
 				$Menu_Save = GUICtrlCreateMenuItem(LNG("Menu_Save"), $Menu_File)
 				$Menu_SaveAs = GUICtrlCreateMenuItem(LNG("Menu_SaveAs"), $Menu_File)
+				$Menu_SaveAll = GUICtrlCreateMenuItem(LNG("Menu_SaveAll"), $Menu_File)
 				$Menu_SaveWorkspace = GUICtrlCreateMenuItem(LNG("Menu_SaveWorkspace"), $Menu_File)
 					GuiCtrlCreateMenuItem("", $Menu_File)
 				$Menu_Close = GUICtrlCreateMenuItem(LNG("Menu_Close"), $Menu_File)
 				$Menu_CloseAll = GUICtrlCreateMenuItem(LNG("Menu_CloseAll"), $Menu_File)
+					GuiCtrlCreateMenuItem("", $Menu_File)
+					$Menu_LastProject = GuiCtrlCreateMenu(LNG("Menu_LastProject"), $Menu_File)
+						$Menu_LastProject_Flush = GuiCtrlCreateMenuItem(LNG("Menu_Last_Flush"), $Menu_LastProject)
+							GuiCtrlCreateMenuItem("", $Menu_LastProject)
+					$Menu_LastWorkspace = GuiCtrlCreateMenu(LNG("Menu_LastWorkspace"), $Menu_File)
+						$Menu_LastWorkspace_Flush = GuiCtrlCreateMenuItem(LNG("Menu_Last_Flush"), $Menu_LastWorkspace)
+							GuiCtrlCreateMenuItem("", $Menu_LastWorkspace)
 					GuiCtrlCreateMenuItem("", $Menu_File)
 				$Menu_Exit = GUICtrlCreateMenuItem(LNG("Menu_Exit"), $Menu_File)
 			$Menu_Edit = GUICtrlCreateMenu(LNG("Menu_Edit"))
@@ -66,9 +78,13 @@ Func _GUI_Main($flag = $__GUI_CREATE)
 				$Menu_Cfg = GUICtrlCreateMenuItem(LNG("Menu_Cfg"), $Menu_Misc)
 				$Menu_About = GUICtrlCreateMenuItem(LNG("Menu_About"), $Menu_Misc)
 			; ---
-			$Tree = GuiCtrlCreateTreeView(2, 26, 296, 352, BitOR($TVS_HASBUTTONS, $TVS_HASLINES, $TVS_LINESATROOT, $TVS_SHOWSELALWAYS), $WS_EX_CLIENTEDGE)
-				GuiCtrlSetResizing($Tree, $GUI_DOCKBORDERS)
-				$__hTree = GuiCtrlGetHandle($Tree)
+			_GUI_LastMenu_Update()
+			; ---
+			;$Tree = GuiCtrlCreateTreeView(2, 26, 296, 352, BitOR($TVS_HASBUTTONS, $TVS_HASLINES, $TVS_LINESATROOT, $TVS_SHOWSELALWAYS), $WS_EX_CLIENTEDGE)
+			;	GuiCtrlSetResizing($Tree, $GUI_DOCKBORDERS)
+			;	$__hTree = GuiCtrlGetHandle($Tree)
+			; On n'utilise pas de contrôle standard car ces Items auront un CtrlID, et interfereront avec les events des autres contrôles
+			$__hTree = _GuiCtrlTreeView_Create($GUI_Main, 2, 26, 296, 352, BitOR($TVS_HASBUTTONS, $TVS_HASLINES, $TVS_LINESATROOT, $TVS_SHOWSELALWAYS), $WS_EX_CLIENTEDGE)
 			; ---
 			$__hToolBar = _GuiCtrlToolBar_Create($GUI_Main)
 				$__hToolTip = _GUIToolTip_Create($__hToolBar)
@@ -76,22 +92,40 @@ Func _GUI_Main($flag = $__GUI_CREATE)
 			; ---
 			; TreeView Image List
 			$__hTreeView_ImageList = _GuiImageList_Create(16, 16, 5, 3)
+			If Not @Compiled Then
 				_GuiImageList_AddIcon($__hTreeView_ImageList, $__ResDir & "\ico_project.ico")
 				_GuiImageList_AddIcon($__hTreeView_ImageList, $__ResDir & "\ico_folder.ico")
 				_GuiImageList_AddIcon($__hTreeView_ImageList, $__ResDir & "\ico_au3.ico")
 				_GuiImageList_AddIcon($__hTreeView_ImageList, $__ResDir & "\ico_txt.ico")
 				_GuiImageList_AddIcon($__hTreeView_ImageList, $__ResDir & "\ico_ini.ico")
 				_GuiImageList_AddIcon($__hTreeView_ImageList, $__ResDir & "\ico_blank.ico")
+			Else
+				_GuiImageList_AddIcon($__hTreeView_ImageList, @AutoItExe, 4)
+				_GuiImageList_AddIcon($__hTreeView_ImageList, @AutoItExe, 5)
+				_GuiImageList_AddIcon($__hTreeView_ImageList, @AutoItExe, 6)
+				_GuiImageList_AddIcon($__hTreeView_ImageList, @AutoItExe, 7)
+				_GuiImageList_AddIcon($__hTreeView_ImageList, @AutoItExe, 8)
+				_GuiImageList_AddIcon($__hTreeView_ImageList, @AutoItExe, 9)
+			EndIf
 			_GuiCtrlTreeView_SetNormalImageList($__hTree, $__hTreeView_ImageList)
 			; ---
 			; Toolbar Image List
 			$__hToolBar_ImageList = _GuiImageList_Create(18, 18, 5, 3)
-				_GuiImageList_AddIcon($__hToolBar_ImageList, $__ResDir & "\btn\btn_newProject.ico", 0)
-				_GuiImageList_AddIcon($__hToolBar_ImageList, $__ResDir & "\btn\btn_open.ico", 0)
-				_GuiImageList_AddIcon($__hToolBar_ImageList, $__ResDir & "\btn\btn_save.ico", 0)
-				_GuiImageList_AddIcon($__hToolBar_ImageList, $__ResDir & "\btn\btn_newFile.ico", 0)
-				_GuiImageList_AddIcon($__hToolBar_ImageList, $__ResDir & "\btn\btn_newFolder.ico", 0)
-				_GuiImageList_AddIcon($__hToolBar_ImageList, $__ResDir & "\btn\btn_delete.ico", 0)
+			If Not @Compiled Then
+				_GuiImageList_AddIcon($__hToolBar_ImageList, $__ResDir & "\btn\btn_newProject.ico", 0, 1)
+				_GuiImageList_AddIcon($__hToolBar_ImageList, $__ResDir & "\btn\btn_open.ico", 0, 1)
+				_GuiImageList_AddIcon($__hToolBar_ImageList, $__ResDir & "\btn\btn_save.ico", 0, 1)
+				_GuiImageList_AddIcon($__hToolBar_ImageList, $__ResDir & "\btn\btn_newFile.ico", 0, 1)
+				_GuiImageList_AddIcon($__hToolBar_ImageList, $__ResDir & "\btn\btn_newFolder.ico", 0, 1)
+				_GuiImageList_AddIcon($__hToolBar_ImageList, $__ResDir & "\btn\btn_delete.ico", 0, 1)
+			Else
+				_GuiImageList_AddIcon($__hToolBar_ImageList, @AutoItExe, 10, 1)
+				_GuiImageList_AddIcon($__hToolBar_ImageList, @AutoItExe, 11, 1)
+				_GuiImageList_AddIcon($__hToolBar_ImageList, @AutoItExe, 12, 1)
+				_GuiImageList_AddIcon($__hToolBar_ImageList, @AutoItExe, 13, 1)
+				_GuiImageList_AddIcon($__hToolBar_ImageList, @AutoItExe, 14, 1)
+				_GuiImageList_AddIcon($__hToolBar_ImageList, @AutoItExe, 15, 1)
+			EndIf
 			_GuiCtrlToolBar_SetImageList($__hToolBar, $__hToolBar_ImageList)
 			; ---
 			; Toolbar buttons
@@ -104,6 +138,7 @@ Func _GUI_Main($flag = $__GUI_CREATE)
 			_GuiCtrlToolBar_AddButton($__hToolBar, $Btn_Delete, 5)
 			; ---
 			GUIRegisterMsg($WM_NOTIFY, "WM_NOTIFY")
+			GUIRegisterMsg($WM_SIZE, "_WM_SIZE")
 			GuiSetAccelerators(__GUI_Main_Accels())
 			; ---
 			_InitMinMax(180, 300, 300, @DesktopHeight)
@@ -140,6 +175,39 @@ Func __GUI_Main_Accels()
 EndFunc
 
 ; ##############################################################
+; Gestion des last projects/workspaces
+
+Global $__Last[1][2] = [[0, ""]]
+
+Func _GUI_LastMenu_Update()
+	For $i = $__Last[0][0] To 1 Step -1
+		GuiCtrlDelete($__Last[$i][0])
+		_ArrayDelete($__Last, $i)
+	Next
+	$__Last[0][0] = 0
+	; ---
+	Local $list = _Last_Enum(1)
+	For $i = 1 To $list[0]
+		If Not $list[$i] Then ContinueLoop
+		; ---
+		Redim $__Last[$__Last[0][0] + 2][2]
+		$__Last[0][0] += 1
+		$__Last[$__Last[0][0]][0] = GuiCtrlCreateMenuItem($list[$i], $Menu_LastProject)
+		$__Last[$__Last[0][0]][1] = $list[$i]
+	Next
+	; ---
+	$list = _Last_Enum(2)
+	For $i = 1 To $list[0]
+		If Not $list[$i] Then ContinueLoop
+		; ---
+		Redim $__Last[$__Last[0][0] + 2][2]
+		$__Last[0][0] += 1
+		$__Last[$__Last[0][0]][0] = GuiCtrlCreateMenuItem($list[$i], $Menu_LastWorkspace)
+		$__Last[$__Last[0][0]][1] = $list[$i]
+	Next
+EndFunc
+
+; ##############################################################
 ; Merci Tlem!!!
 
 Func _InitMinMax($x0, $y0, $x1, $y1)
@@ -157,4 +225,16 @@ Func MY_WM_GETMINMAXINFO($hWnd, $Msg, $wParam, $lParam)
     DllStructSetData($minmaxinfo, 9, $aUtil_MinMax[2]); max X
     DllStructSetData($minmaxinfo, 10, $aUtil_MinMax[3]); max Y
     Return $GUI_RUNDEFMSG
+EndFunc
+
+; ##############################################################
+; Pour redimensionner le TreeView
+
+Func _WM_SIZE($hWnd, $iMsg, $wParam, $lParam)
+	Local $w = _WinAPI_LoWord($lParam)
+    Local $h = _WinAPI_HiWord($lParam)
+	; ---
+	_WinAPI_MoveWindow($__hTree, 2, 26, $w - 4, $h - (4 + 24))
+	; ---
+    Return 0
 EndFunc

@@ -1,17 +1,45 @@
+#NoTrayIcon
+
+#Region ;**** Directives created by AutoIt3Wrapper_GUI ****
+#AutoIt3Wrapper_Compression=4
+; ---
+#AutoIt3Wrapper_Res_Icon_Add=res\ico_project.ico ; 4
+#AutoIt3Wrapper_Res_Icon_Add=res\ico_folder.ico
+#AutoIt3Wrapper_Res_Icon_Add=res\ico_au3.ico
+#AutoIt3Wrapper_Res_Icon_Add=res\ico_txt.ico
+#AutoIt3Wrapper_Res_Icon_Add=res\ico_ini.ico
+#AutoIt3Wrapper_Res_Icon_Add=res\ico_blank.ico
+; ---
+#AutoIt3Wrapper_Res_Icon_Add=res\btn\btn_newProject.ico ; 10
+#AutoIt3Wrapper_Res_Icon_Add=res\btn\btn_open.ico
+#AutoIt3Wrapper_Res_Icon_Add=res\btn\btn_save.ico
+#AutoIt3Wrapper_Res_Icon_Add=res\btn\btn_newFile.ico
+#AutoIt3Wrapper_Res_Icon_Add=res\btn\btn_newFolder.ico
+#AutoIt3Wrapper_Res_Icon_Add=res\btn\btn_delete.ico ; 15
+#EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
+
 #cs ----------------------------------------------------------------------------
 	
 	AutoIt Version: 3.3.8.0
 	Author:         Matwachich
 	
 	Script Function:
-	
+		Project Manager for SciTE4AutoIt
 	
 #ce ----------------------------------------------------------------------------
-#NoTrayIcon
+
 Opt("GUICloseOnEsc", 0)
 
 #include <Array.au3>
 #include <Misc.au3>
+#include "lib\AutoConfig.au3"
+
+_AutoCfg_Init($ACFG_INI, @ScriptDir & "\spm_config.ini", "SPM_Configuration")
+	_AutoCfg_AddEntry("last_projects", "")
+	_AutoCfg_AddEntry("last_workspaces", "")
+	_AutoCfg_AddEntry("last_saveCount", 5)
+_AutoCfg_Update()
+
 
 Global $__TV_DragMode = 0, $__TV_Drag_hItem = 0
 Global $__User32_Dll = DllOpen("user32.dll")
@@ -41,7 +69,7 @@ While 1
 	$nMsg = GUIGetMsg()
 	Switch $nMsg
 		Case $GUI_EVENT_CLOSE, $Menu_Exit
-			Exit
+			If _Project_SaveAll() Then Exit
 		Case $Menu_New, $Btn_New
 			_Event_New()
 		Case $Menu_Open, $Btn_Open
@@ -51,6 +79,8 @@ While 1
 			_Event_Save()
 		Case $Menu_SaveAs
 			_Event_SaveAs()
+		Case $Menu_SaveAll
+			_Event_SaveAll()
 		Case $Menu_SaveWorkspace
 			_Event_SaveWorkspace()
 			; ---
@@ -58,6 +88,11 @@ While 1
 			_Event_Close()
 		Case $Menu_CloseAll
 			_Event_Close(1)
+			; ---
+		Case $Menu_LastProject_Flush
+			_Last_Empty(1)
+		Case $Menu_LastWorkspace_Flush
+			_Last_Empty(2)
 			; ---
 		Case $Menu_SetActif
 			_Event_SetActif()
@@ -71,10 +106,19 @@ While 1
 		Case $GUI_EVENT_MOUSEMOVE
 			__TV_HandleDrag()
 	EndSwitch
+	; ---
+	; Last Project/Workspace
+	For $i = 1 To $__Last[0][0]
+		If $nMsg = $__Last[$i][0] Then
+			_LoadWorkspace($__Last[$i][1])
+			_LoadProject($__Last[$i][1])
+		EndIf
+	Next
 WEnd
 
 Func _OnExit()
-	_Event_Close(1)
+	; Ce _Event_Close est avec $iDontSave = 1, car on a sauvegarder dans la boucle principale
+	_Event_Close(1, 1)
 	_GUI_Main($__GUI_Delete)
 	DllClose($__User32_Dll)
 EndFunc   ;==>_OnExit

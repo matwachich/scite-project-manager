@@ -1,11 +1,8 @@
-<Project name="Scite Project Manager" exp="True">
+<Project name="Scite Project Manager" exp="False">
 	<Folder name="lib" exp="False">
 		<File path="lib\ScriptingDictionary.au3"></File>
-		<File path="lib\3StatIcon.au3"></File>
-		<File path="lib\GUICtrlOnHover.au3"></File>
-		<File path="lib\Icons.au3"></File>
 	</Folder>
-	<Folder name="doc" exp="True">
+	<Folder name="doc" exp="False">
 		<File path="ToDo.txt"></File>
 		<File path="Mods.txt"></File>
 	</Folder>
