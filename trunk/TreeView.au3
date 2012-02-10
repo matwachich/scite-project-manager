@@ -11,6 +11,7 @@
 
 #include <Array.au3>
 #include <GuiTreeView.au3>
+#include <GuiEdit.au3>
 
 Global $__TV_Assoc[1][3] = [[0, "sInfo", "hParent"]] ; hndl, info, parent
 ; ---
@@ -43,6 +44,24 @@ Func _TV_Add($sText, $sType, $hParent, $sPath = "", $iProjectID = "")
 	EndSwitch
 	; ---
 	Return $hCtrl
+EndFunc
+
+Func _TV_GetAllChildren($hItem)
+	Local $count = _GuiCtrlTreeView_GetChildCount($__hTree, $hItem)
+	If $count < 1 Then Return 0
+	; ---
+	Local $ret[$count + 1] = [$count]
+	Local $curr
+	; ---
+	$curr = _GuiCtrlTreeView_GetFirstChild($__hTree, $hItem)
+	$ret[1] = $curr
+	; ---
+	For $i = 2 To $count
+		$ret[$i] = _GuiCtrlTreeView_GetNextChild($__hTree, $curr)
+		$curr = $ret[$i]
+	Next
+	; ---
+	Return $ret
 EndFunc
 
 ; hParent doit toujours être le Item du projet (et pas d'un dossier) pour que la suppression
@@ -81,15 +100,21 @@ Func __TV_HandleDrag()
 	If Not $__TV_DragMode Then Return
 	; ---
 	Local $hItem, $Info
+	; si le bouton n'a pas encore été relaché
 	If _IsPressed("01", $__User32_Dll) Then
+		; récupère l'item sous le curseur
 		$hItem = __TV_MouseItem()
 		If Not $hItem Then
+			; pas d'item => on désactive le InsertMark
 			_GuiCtrlTreeView_SetInsertMark($__hTree, 0)
 		Else
+			; si il y a un item, et qu'il est différent du dernier item traité
 			If $__Int_LastHoverItem And $__Int_LastHoverItem <> $hItem Then
+				; on enlève tout InsertMark et Selection d'item d'abords...
 				_GuiCtrlTreeView_SetInsertMark($__hTree, 0)
 				_GuiCtrlTreeView_SetSelected($__hTree, $__Int_LastHoverItem, False)
 				; ---
+				; ... puis, selon son type (de l'item), on met un InsertMark et/ou on selectionne l'item
 				$Info = _TV_ItemGetInfo($hItem)
 				Switch $Info[1]
 					Case "FILE"
@@ -103,7 +128,7 @@ Func __TV_HandleDrag()
 			$__Int_LastHoverItem = $hItem
 		EndIf
 	Else
-		; End Drag
+		; End Drag (bouton relaché)
 		; ---
 		;ConsoleWrite("Drag OFF" & @CRLF)
 		; ---
@@ -188,6 +213,45 @@ Func __TV_FolderMove_AddToArray(ByRef $array, $hItem)
 	$array[$array[0][0]][2] = _GUICtrlTreeView_GetImageIndex($__hTree, $hItem)
 EndFunc
 #ce
+
+Func _TV_AfterRename($hItem, $sNewText)
+	Local $Info = _TV_ItemGetInfo($hItem)
+	Switch $Info[1]
+		Case "PROJECT"
+			__OpenProject_SetName($Info[2], $sNewText)
+		Case "FOLDER"
+			; rien a faire
+		Case "FILE"
+			If CFG("rename_askConfirmation") = $GUI_CHECKED And Not _Ask(LNG("prompt_confirmFileRename")) Then Return False
+			; ---
+			Local $sPath = _File_GetPath(__OpenProject_GetPath($Info[2])) & "\" & $Info[3]
+			; si le fichier ne se trouve pas dans un dossier identique ou enfant du dossier du projet
+			If StringInStr($sPath, "..") Then $sPath = _PathFull($sPath)
+			; ---
+			Local $sNewPath = _File_GetPath($sPath) & "\" & $sNewText
+			; ---
+			If CFG("rename_backupFile") = $GUI_CHECKED Then FileCopy($sPath, $sPath & ".bak")
+			FileMove($sPath, $sNewPath)
+			; ---
+			_TV_AssocInfo_Modify($hItem, "FILE|" & $Info[2] & "|" & _PathGetRelative(_File_GetPath(__OpenProject_GetPath($Info[2])), $sNewPath))
+			; ---
+			Local $iIco
+			Switch _File_GetExt($sPath)
+				Case "au3"
+					$iIco = 2
+				Case "txt"
+					$iIco = 3
+				Case "ini", "cfg"
+					$iIco = 4
+				Case Else
+					$iIco = 5
+			EndSwitch
+			_GuiCtrlTreeView_SetImageIndex($__hTree, $hItem, $iIco)
+	EndSwitch
+	; ---
+	__OpenProject_SetModified($Info[2])
+	Return True
+EndFunc
 
 ; ##############################################################
 
@@ -333,8 +397,13 @@ EndFunc
 
 ; expand one item, without expanding it's child items that have childs (from _GuiCtrlTreeView_ExpandItem)
 Func __TV_ExpandItems($aItems)
-	For $i = 1 To $aItems[0]
-		_SendMessage($__hTree, $TVM_EXPAND, $TVE_EXPAND, $aItems[$i], 0, "wparam", "handle")
-		_SendMessage($__hTree, $TVM_ENSUREVISIBLE, 0, $aItems[$i], 0, "wparam", "handle")
-	Next
+	If IsArray($aItems) Then
+		For $i = 1 To $aItems[0]
+			_SendMessage($__hTree, $TVM_EXPAND, $TVE_EXPAND, $aItems[$i], 0, "wparam", "handle")
+			_SendMessage($__hTree, $TVM_ENSUREVISIBLE, 0, $aItems[$i], 0, "wparam", "handle")
+		Next
+	Else
+		_SendMessage($__hTree, $TVM_EXPAND, $TVE_EXPAND, $aItems, 0, "wparam", "handle")
+		_SendMessage($__hTree, $TVM_ENSUREVISIBLE, 0, $aItems, 0, "wparam", "handle")
+	EndIf
 EndFunc

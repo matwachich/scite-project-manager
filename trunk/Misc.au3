@@ -9,27 +9,22 @@
 #ce ----------------------------------------------------------------------------
 #Include-Once
 
-#cs
-; UEZ
-Func _ExtractIcon($sFile, $iIndex)
-	_GDIPlus_Startup()
+Func _CmdLine_Parse()
+	If $CmdLine[0] = 0 Then Return
 	; ---
-	Local $aRet = DllCall("shell32", "long", "ExtractAssociatedIcon", "int", 0, "str", $sFile, "int*", $iIndex)
-	Local $hIcon = $aRet[0]
-	$aRet = DllCall($ghGDIPDll, "int", "GdipCreateBitmapFromHICON", "ptr", $hIcon, "int*", 0)
-	Local $hBitmap = $aRet[0]
-	_WinAPI_DestroyIcon($hIcon)
-	; ---
-	_GDIPlus_Shutdown()
-	Return $hBitmap
+	For $i = 1 To $CmdLine[0]
+		_LoadWorkspace($CmdLine[$i])
+		_LoadProject($CmdLine[$i])
+	Next
 EndFunc
-#ce
 
 ; ##############################################################
 ; Historique des projets
 ; iType: 1 = project | 2 = workspace
 
 Func _Last_Add($iType, $sPath)
+	If CFG("last_saveCount") < 1 Then Return
+	; ---
 	If _Last_Existes($sPath) Then Return
 	; ---
 	Local $key
@@ -122,6 +117,61 @@ Func _FileOpenDialog_ParseMultiple($sel)
 	EndIf
 	; ---
 	Return $ret
+EndFunc
+
+; ##############################################################
+
+Func _About()
+	GuiSetState(@SW_DISABLE, $GUI_Main)
+	; ---
+	#Region ### START Koda GUI section ### Form=
+	Local $GUI_About = GUICreate("About", 322, 253, -1, -1, -1, $WS_EX_TOOLWINDOW + $WS_EX_TOPMOST)
+	GUICtrlCreateGroup("", 8, 8, 305, 197)
+	Local $L_Spm = GUICtrlCreateLabel("Scite Project Manager", 60, 24, 205, 28)
+		GUICtrlSetFont(-1, 16, 800, 0, "Times New Roman")
+		GuiCtrlSetColor(-1, 0x0011FF)
+		GuiCtrlSetCursor(-1, 0)
+		GuiCtrlSetTip(-1, LNG("about_tip_title"))
+	; ---
+	GUICtrlCreateLabel("v " & $__Version, 60, 54, 205, 17, $SS_CENTER)
+	GUICtrlCreateLabel(LNG("about"), 16, 82, 287, 113)
+	GUICtrlCreateGroup("", -99, -99, 1, 1)
+	Local $B_OK = GUICtrlCreateButton("&OK", 124, 220, 75, 25, 0)
+	; ---
+	Local $L_Com = GUICtrlCreateLabel("AutoItScript.com", 12, 216, 82, 17)
+		GuiCtrlSetColor(-1, 0x0011FF)
+		GuiCtrlSetCursor(-1, 0)
+		GuiCtrlSetTip(-1, LNG("about_tip_com"))
+	Local $L_Fr = GUICtrlCreateLabel("AutoItScript.fr", 240, 216, 68, 17)
+		GuiCtrlSetColor(-1, 0x0011FF)
+		GuiCtrlSetCursor(-1, 0)
+		GuiCtrlSetTip(-1, LNG("about_tip_fr"))
+	GUISetState(@SW_SHOW, $GUI_About)
+	#EndRegion ### END Koda GUI section ###
+	
+	Local $msg
+	While 1
+		$msg = GuiGetMsg(1)
+		If $msg[1] = $GUI_About Then
+			Switch $msg[0]
+				Case $GUI_EVENT_CLOSE, $B_OK
+					ExitLoop
+				Case $L_Com
+					ShellExecute("http://www.autoitscript.com")
+					ExitLoop
+				Case $L_Fr
+					ShellExecute("http://www.autoitscript.fr")
+					ExitLoop
+				Case $L_Spm
+					ShellExecute("http://code.google.com/p/scite-project-manager/")
+					ExitLoop
+			EndSwitch
+		EndIf
+	WEnd
+	GuiDelete($GUI_About)
+	; ---
+	GuiSetState(@SW_ENABLE, $GUI_Main)
+	WinActivate($GUI_Main)
 EndFunc
 
 ; ##############################################################
