@@ -10,6 +10,7 @@
 #Include-Once
 
 #include <File.au3>
+#include <GuiMenu.au3>
 
 Func _Event_New()
 	Local $prjName = InputBox(LNG("ProgName"), LNG("prompt_new"))
@@ -144,6 +145,7 @@ Func _Event_AddFile()
 		$sPath[$i] = _PathGetRelative($projPath, $sPath[$i])
 		; ---
 		_TV_Add(_File_GetName($sPath[$i]), "file", $hItemToAdd, $sPath[$i], $Info[2])
+		__TV_ExpandItems($hItemToAdd)
 		If Not FileExists($sPath[$i]) Then _File_Create($sPath[$i])
 	Next
 	; ---
@@ -201,12 +203,92 @@ EndFunc
 
 ; ##############################################################
 
+Func _Event_OpenAll()
+	Local $item = _GuiCtrlTreeView_GetSelection($__hTree)
+	If Not $item Then Return
+	; ---
+	Local $child = _TV_GetAllChildren($item)
+	If Not IsArray($child) Then Return
+	; ---
+	Local $info
+	For $i = 1 To $child[0]
+		$info = _TV_ItemGetInfo($child[$i])
+		If $info[1] = "FILE" Then
+			; EVENT: Ouverture de fichier dans SciTE
+			ConsoleWrite("Open: " & $info[3] & @CRLF)
+		EndIf
+	Next
+EndFunc
+
+;$__TV_EditedItem
+Func _Event_Edit()
+	Local $item = _GuiCtrlTreeView_GetSelection($__hTree)
+	If Not $item Then Return
+	; ---
+	ConsoleWrite("Rename ON" & @CRLF)
+	_GuiCtrlTreeView_EditText($__hTree, $item)
+	$__TV_EditedItem = $item
+EndFunc
+
+Func _Event_Browse()
+	Local $item = _GuiCtrlTreeView_GetSelection($__hTree)
+	If Not $item Then Return
+	; ---
+	Local $info = _TV_ItemGetInfo($item), $path
+	Switch $info[1]
+		Case "FILE"
+			$path = _File_GetPath(_File_GetPath(__OpenProject_GetPath($info[2])) & "\" & $info[3])
+			ShellExecute($path)
+		Case "PROJECT"
+			$path = _File_GetPath($info[3])
+			ShellExecute($path)
+	EndSwitch
+EndFunc
+
+; ##############################################################
+
 Func _Event_TV_DblClick($hItem)
-	$info = _TV_ItemGetInfo($hItem)
+	Local $info = _TV_ItemGetInfo($hItem)
+	Switch $info[1]
+		;Case "PROJECT"
+		;	__SetActifProject($info[2])
+		Case "FILE"
+			; Ouverture du fichier, après vérification de son existence
+	EndSwitch
+EndFunc
+
+Func _Event_TV_RClick($hItem)
+	GuiCtrlSetState($CMenu_OpenAll, $GUI_DISABLE)
+	GuiCtrlSetState($CMenu_AddFile, $GUI_DISABLE)
+	GuiCtrlSetState($CMenu_AddFolder, $GUI_DISABLE)
+	GuiCtrlSetState($CMenu_Delete, $GUI_DISABLE)
+	GuiCtrlSetState($CMenu_Close, $GUI_DISABLE)
+	GuiCtrlSetState($CMenu_Rename, $GUI_DISABLE)
+	GuiCtrlSetState($CMenu_Browse, $GUI_DISABLE)
+	; ---
+	Local $info = _TV_ItemGetInfo($hItem)
 	Switch $info[1]
 		Case "PROJECT"
-			__SetActifProject($info[2])
+			GuiCtrlSetState($CMenu_OpenAll, $GUI_ENABLE)
+			GuiCtrlSetState($CMenu_AddFile, $GUI_ENABLE)
+			GuiCtrlSetState($CMenu_AddFolder, $GUI_ENABLE)
+			GuiCtrlSetState($CMenu_Close, $GUI_ENABLE)
+			GuiCtrlSetState($CMenu_Rename, $GUI_ENABLE)
+			GuiCtrlSetState($CMenu_Browse, $GUI_ENABLE)
+		Case "FOLDER"
+			GuiCtrlSetState($CMenu_OpenAll, $GUI_ENABLE)
+			GuiCtrlSetState($CMenu_AddFile, $GUI_ENABLE)
+			GuiCtrlSetState($CMenu_AddFolder, $GUI_ENABLE)
+			GuiCtrlSetState($CMenu_Delete, $GUI_ENABLE)
+			GuiCtrlSetState($CMenu_Rename, $GUI_ENABLE)
+		Case "FILE"
+			GuiCtrlSetState($CMenu_Delete, $GUI_ENABLE)
+			GuiCtrlSetState($CMenu_Rename, $GUI_ENABLE)
+			GuiCtrlSetState($CMenu_Browse, $GUI_ENABLE)
 	EndSwitch
+	; ---
+	; on rend le projet actif
+	__SetActifProject($info[2])
 EndFunc
 
 #cs

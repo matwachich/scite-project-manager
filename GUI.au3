@@ -12,16 +12,21 @@
 #include <GUIConstantsEx.au3>
 #include <TreeViewConstants.au3>
 #include <WindowsConstants.au3>
+#include <UpdownConstants.au3>
+#include <ComboConstants.au3>
 #include <GuiTreeView.au3>
 #include <GuiImageList.au3>
 #include <GuiToolbar.au3>
 #include <GuiToolTip.au3>
+#include <StaticConstants.au3>
+
+#include "lib\GUIMinMax.au3"
 
 Global Enum $__GUI_Create, $__GUI_Delete, $__GUI_Show, $__GUI_Hide
 
 Global Enum $Btn_New = 1000, $Btn_Open, $Btn_Save, $Btn_AddFile, $Btn_AddFolder, $Btn_Delete
 
-; Taille minimum de la GUI
+; Taille min/max de la GUI
 Global $aUtil_MinMax[4]
 
 ; ##############################################################
@@ -39,7 +44,10 @@ Global $Menu_File, _
 Global $Menu_Edit, _
 			$Menu_SetActif, $Menu_AddFile, $Menu_AddFolder, $Menu_Delete
 Global $Menu_Misc, _
-			$Menu_Cfg, $Menu_About
+			$Menu_Cfg, $Menu_Bug, $Menu_About
+; ---
+Global $CMenu_Dummy, $CMenu, $hCMenu, _
+			$CMenu_OpenAll, $CMenu_AddFile, $CMenu_AddFolder, $CMenu_Delete, $CMenu_Close, $CMenu_Rename, $CMenu_Browse
 
 Func _GUI_Main($flag = $__GUI_CREATE)
 	Switch $flag
@@ -47,6 +55,23 @@ Func _GUI_Main($flag = $__GUI_CREATE)
 			#Region ### START Koda GUI section ### Form=GUI_Main.kxf
 			$GUI_Main = GUICreate("SPM", 300, 400, 0, 0, BitOr($GUI_SS_DEFAULT_GUI, $WS_SIZEBOX, $WS_CLIPCHILDREN), $WS_EX_ACCEPTFILES)
 			; ---
+			; ça, c'est pour faire avancer le compteur des CtrlID, pour qu'il n'y ait plus d'interférences
+			; entre les CMenu et les Contrôles de la GUI (c'est le seul truc que j'ai trouvé!!!)
+			; Car, quand je fais Bouton-Droit sur un TVItem, le menu apparaît, Je clique sur un Item du menu
+			; c'est bon il est appelé, mais le message du clique droit sur le TVItem est aussi traité,
+			; et ça peut correspondre à n'import quoi! (New, Open...) alors, pour que ce clique droit ne
+			; corresponde plus à rien, je fais avancer le compteur pour les contrôles aient des ID élevés
+			; --- PS: tous ces dummy sont détruit à la fin de la création de la GUI ---
+			; Et non! je ne les supprime pas à la fin, sinon, les contrôles créer après cette fonction (les MenuItem
+			; de l'historique des projets/workspace) prendront les CtrlID que je voulai éviter! Et il y aura de nouveau
+			; interférence!!!
+			;Local $dummy[200]
+			For $i = 0 To 199
+				GuiCtrlCreateDummy()
+				;$dummy[$i] = GuiCtrlCreateDummy()
+			Next
+			; ---
+			; GUI Menu
 			$Menu_File = GUICtrlCreateMenu(LNG("Menu_File"))
 				$Menu_New = GUICtrlCreateMenuItem(LNG("Menu_New"), $Menu_File)
 				$Menu_Open = GUICtrlCreateMenuItem(LNG("Menu_Open"), $Menu_File)
@@ -76,15 +101,33 @@ Func _GUI_Main($flag = $__GUI_CREATE)
 				$Menu_Delete = GUICtrlCreateMenuItem(LNG("Menu_Delete"), $Menu_Edit)
 			$Menu_Misc = GUICtrlCreateMenu(LNG("Menu_Misc"))
 				$Menu_Cfg = GUICtrlCreateMenuItem(LNG("Menu_Cfg"), $Menu_Misc)
+					GuiCtrlCreateMenuItem("", $Menu_Misc)
+				$Menu_Bug = GuiCtrlCreateMenuItem(LNG("Menu_Bug"), $Menu_Misc)
 				$Menu_About = GUICtrlCreateMenuItem(LNG("Menu_About"), $Menu_Misc)
 			; ---
 			_GUI_LastMenu_Update()
+			; ---
+			; TreeView Context Menu
+			$CMenu_Dummy = GuiCtrlCreateDummy()
+			$CMenu = GuiCtrlCreateContextMenu($CMenu_Dummy)
+				$CMenu_Close = GuiCtrlCreateMenuItem(LNG("CMenu_Close"), $CMenu)
+					GuiCtrlCreateMenuItem("", $CMenu)
+				$CMenu_OpenAll = GuiCtrlCreateMenuItem(LNG("CMenu_OpenAll"), $CMenu)
+					GuiCtrlCreateMenuItem("", $CMenu)
+				$CMenu_AddFile = GuiCtrlCreateMenuItem(LNG("Menu_AddFile"), $CMenu)
+				$CMenu_AddFolder = GuiCtrlCreateMenuItem(LNG("Menu_AddFolder"), $CMenu)
+				$CMenu_Rename = GuiCtrlCreateMenuItem(LNG("CMenu_Rename"), $CMenu)
+				$CMenu_Delete = GuiCtrlCreateMenuItem(LNG("Menu_Delete"), $CMenu)
+					GuiCtrlCreateMenuItem("", $CMenu)
+				$CMenu_Browse = GuiCtrlCreateMenuItem(LNG("CMenu_Browse"), $CMenu)
+			; ---
+			$hCMenu = GuiCtrlGetHandle($CMenu)
 			; ---
 			;$Tree = GuiCtrlCreateTreeView(2, 26, 296, 352, BitOR($TVS_HASBUTTONS, $TVS_HASLINES, $TVS_LINESATROOT, $TVS_SHOWSELALWAYS), $WS_EX_CLIENTEDGE)
 			;	GuiCtrlSetResizing($Tree, $GUI_DOCKBORDERS)
 			;	$__hTree = GuiCtrlGetHandle($Tree)
 			; On n'utilise pas de contrôle standard car ces Items auront un CtrlID, et interfereront avec les events des autres contrôles
-			$__hTree = _GuiCtrlTreeView_Create($GUI_Main, 2, 26, 296, 352, BitOR($TVS_HASBUTTONS, $TVS_HASLINES, $TVS_LINESATROOT, $TVS_SHOWSELALWAYS), $WS_EX_CLIENTEDGE)
+			$__hTree = _GuiCtrlTreeView_Create($GUI_Main, 2, 26, 296, 352, BitOR($TVS_EDITLABELS, $TVS_HASBUTTONS, $TVS_HASLINES, $TVS_LINESATROOT, $TVS_SHOWSELALWAYS), $WS_EX_CLIENTEDGE)
 			; ---
 			$__hToolBar = _GuiCtrlToolBar_Create($GUI_Main)
 				$__hToolTip = _GUIToolTip_Create($__hToolBar)
@@ -100,12 +143,12 @@ Func _GUI_Main($flag = $__GUI_CREATE)
 				_GuiImageList_AddIcon($__hTreeView_ImageList, $__ResDir & "\ico_ini.ico")
 				_GuiImageList_AddIcon($__hTreeView_ImageList, $__ResDir & "\ico_blank.ico")
 			Else
-				_GuiImageList_AddIcon($__hTreeView_ImageList, @AutoItExe, 4)
-				_GuiImageList_AddIcon($__hTreeView_ImageList, @AutoItExe, 5)
-				_GuiImageList_AddIcon($__hTreeView_ImageList, @AutoItExe, 6)
-				_GuiImageList_AddIcon($__hTreeView_ImageList, @AutoItExe, 7)
-				_GuiImageList_AddIcon($__hTreeView_ImageList, @AutoItExe, 8)
-				_GuiImageList_AddIcon($__hTreeView_ImageList, @AutoItExe, 9)
+				_GuiImageList_AddIcon($__hTreeView_ImageList, @ScriptFullPath, 4)
+				_GuiImageList_AddIcon($__hTreeView_ImageList, @ScriptFullPath, 5)
+				_GuiImageList_AddIcon($__hTreeView_ImageList, @ScriptFullPath, 6)
+				_GuiImageList_AddIcon($__hTreeView_ImageList, @ScriptFullPath, 7)
+				_GuiImageList_AddIcon($__hTreeView_ImageList, @ScriptFullPath, 8)
+				_GuiImageList_AddIcon($__hTreeView_ImageList, @ScriptFullPath, 9)
 			EndIf
 			_GuiCtrlTreeView_SetNormalImageList($__hTree, $__hTreeView_ImageList)
 			; ---
@@ -119,12 +162,12 @@ Func _GUI_Main($flag = $__GUI_CREATE)
 				_GuiImageList_AddIcon($__hToolBar_ImageList, $__ResDir & "\btn\btn_newFolder.ico", 0, 1)
 				_GuiImageList_AddIcon($__hToolBar_ImageList, $__ResDir & "\btn\btn_delete.ico", 0, 1)
 			Else
-				_GuiImageList_AddIcon($__hToolBar_ImageList, @AutoItExe, 10, 1)
-				_GuiImageList_AddIcon($__hToolBar_ImageList, @AutoItExe, 11, 1)
-				_GuiImageList_AddIcon($__hToolBar_ImageList, @AutoItExe, 12, 1)
-				_GuiImageList_AddIcon($__hToolBar_ImageList, @AutoItExe, 13, 1)
-				_GuiImageList_AddIcon($__hToolBar_ImageList, @AutoItExe, 14, 1)
-				_GuiImageList_AddIcon($__hToolBar_ImageList, @AutoItExe, 15, 1)
+				_GuiImageList_AddIcon($__hToolBar_ImageList, @ScriptFullPath, 10, 1)
+				_GuiImageList_AddIcon($__hToolBar_ImageList, @ScriptFullPath, 11, 1)
+				_GuiImageList_AddIcon($__hToolBar_ImageList, @ScriptFullPath, 12, 1)
+				_GuiImageList_AddIcon($__hToolBar_ImageList, @ScriptFullPath, 13, 1)
+				_GuiImageList_AddIcon($__hToolBar_ImageList, @ScriptFullPath, 14, 1)
+				_GuiImageList_AddIcon($__hToolBar_ImageList, @ScriptFullPath, 15, 1)
 			EndIf
 			_GuiCtrlToolBar_SetImageList($__hToolBar, $__hToolBar_ImageList)
 			; ---
@@ -138,11 +181,15 @@ Func _GUI_Main($flag = $__GUI_CREATE)
 			_GuiCtrlToolBar_AddButton($__hToolBar, $Btn_Delete, 5)
 			; ---
 			GUIRegisterMsg($WM_NOTIFY, "WM_NOTIFY")
-			GUIRegisterMsg($WM_SIZE, "_WM_SIZE")
+			GUIRegisterMsg($WM_SIZE, "WM_SIZE")
 			GuiSetAccelerators(__GUI_Main_Accels())
 			; ---
-			_InitMinMax(180, 300, 300, @DesktopHeight)
+			_GUI_MinMax_Set($GUI_Main, 180, 300, 300, @DesktopHeight)
 			WinMove($GUI_Main, "", 0, 0, 180, 400)
+			; ---
+			;For $i = 0 To 99
+			;	GuiCtrlDelete($dummy[$i])
+			;Next
 			; ---
 			#EndRegion ### END Koda GUI section ###
 		Case $__GUI_SHOW
@@ -208,33 +255,45 @@ Func _GUI_LastMenu_Update()
 EndFunc
 
 ; ##############################################################
-; Merci Tlem!!!
+; Pour redimensionner le TreeView (car il n'a pas de CtrlID)
 
-Func _InitMinMax($x0, $y0, $x1, $y1)
-    $aUtil_MinMax[0] = $x0
-    $aUtil_MinMax[1] = $y0
-    $aUtil_MinMax[2] = $x1
-    $aUtil_MinMax[3] = $y1
-    GUIRegisterMsg(0x24, 'MY_WM_GETMINMAXINFO') ; $WM_GETMINMAXINFO
-EndFunc
-
-Func MY_WM_GETMINMAXINFO($hWnd, $Msg, $wParam, $lParam)
-    Local $minmaxinfo = DllStructCreate('int;int;int;int;int;int;int;int;int;int',$lParam)
-    DllStructSetData($minmaxinfo, 7, $aUtil_MinMax[0]); min X
-    DllStructSetData($minmaxinfo, 8, $aUtil_MinMax[1]); min Y
-    DllStructSetData($minmaxinfo, 9, $aUtil_MinMax[2]); max X
-    DllStructSetData($minmaxinfo, 10, $aUtil_MinMax[3]); max Y
-    Return $GUI_RUNDEFMSG
-EndFunc
-
-; ##############################################################
-; Pour redimensionner le TreeView
-
-Func _WM_SIZE($hWnd, $iMsg, $wParam, $lParam)
+Func WM_SIZE($hWnd, $iMsg, $wParam, $lParam)
 	Local $w = _WinAPI_LoWord($lParam)
     Local $h = _WinAPI_HiWord($lParam)
 	; ---
 	_WinAPI_MoveWindow($__hTree, 2, 26, $w - 4, $h - (4 + 24))
 	; ---
     Return 0
+EndFunc
+
+; ##############################################################
+; Cfg GUI
+Global $GUI_Cfg, $C_Lang, $I_MaxHistory, $ud_MaxHistory, $C_Assoc, $C_RenameConfirmation, $C_RenameBackup, $B_Ok
+
+Func _GUI_Cfg($flag = $__GUI_CREATE)
+	Switch $flag
+		Case $__GUI_CREATE
+			#Region ### START Koda GUI section ### Form=GUI_Cfg.kxf
+			$GUI_Cfg = GUICreate(LNG("cfg_title"), 254, 216, -1, -1, -1, -1, $GUI_Main)
+			GUICtrlCreateLabel(LNG("cfg_lng"), 18, 18, 58, 17)
+			GUICtrlCreateLabel(LNG("cfg_hist_1"), 18, 48, 213, 17)
+			GUICtrlCreateLabel(LNG("cfg_hist_2"), 18, 69, 115, 17)
+			$C_Lang = GUICtrlCreateCombo("", 78, 15, 151, 25, BitOR($CBS_DROPDOWNLIST,$CBS_AUTOHSCROLL))
+			$I_MaxHistory = GUICtrlCreateInput("", 132, 66, 97, 21, $SS_RIGHT)
+				$ud_MaxHistory = GuiCtrlCreateUpDown($I_MaxHistory)
+				GuiCtrlSetLimit($ud_MaxHistory, 15, 0)
+			$C_Assoc = GUICtrlCreateCheckbox(LNG("cfg_assoc"), 15, 150, 223, 17)
+				If Not @compiled Then GuiCtrlSetState($C_Assoc, $GUI_DISABLE)
+			$C_RenameConfirmation = GUICtrlCreateCheckbox("Ask confirmation before renaming files", 15, 102, 229, 17)
+			$C_RenameBackup = GUICtrlCreateCheckbox("Make backup of renamed files", 15, 120, 229, 17)
+			$B_Ok = GUICtrlCreateButton("OK", 89, 180, 75, 25)
+			#EndRegion ### END Koda GUI section ###
+		Case $__GUI_SHOW
+			GuiSetState(@SW_SHOW, $GUI_Cfg)
+		Case $__GUI_HIDE
+			GuiSetState(@SW_HIDE, $GUI_Cfg)
+		Case $__GUI_DELETE
+			GuiDelete($GUI_Cfg)
+			$GUI_Cfg = 0
+	EndSwitch
 EndFunc

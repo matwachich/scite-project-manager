@@ -29,12 +29,12 @@ Func _LoadWorkspace($sFile)
 		; ---
 		$projects = $elem.SelectNodes("Project")
 		For $prj In $projects
-			_LoadProject(_File_GetPath($sFile) & "\" & $prj.getAttribute("path"))
+			_LoadProject(_File_GetPath($sFile) & "\" & $prj.getAttribute("path"), 1)
 		Next
 	Next
 EndFunc
 
-Func _LoadProject($sFile)
+Func _LoadProject($sFile, $iFromWorkspace = 0)
 	Local $oXml = ObjCreate("Microsoft.XMLDOM")
 	If Not IsObj($oXml) Or Not FileExists($sFile) Then Return SetError(1, 0, 0)
 	; ---
@@ -45,7 +45,7 @@ Func _LoadProject($sFile)
 	; $aToExpend contiendra tous les Elements à Expand à la fin de l'ouverture
 	Local $prjName, $hCtrl, $iProjectID, $aToExpend[1], $tmp
 	For $elem In $projects
-		_Last_Add(1, $sFile)
+		If Not $iFromWorkspace Then _Last_Add(1, $sFile)
 		; ---
 		ReDim $aToExpend[1]
 		$aToExpend[0] = 0
@@ -192,6 +192,12 @@ Func __OpenProject_Add($sName, $sPath, $CtrlID, $iModified = 0)
 	If $__ActifProject = 0 Then __SetActifProject($index)
 	; ---
 	Return $index
+EndFunc
+
+Func __OpenProject_SetName($iProjectID, $sName)
+	If $iProjectID > $__OpenedProjects[0][0] Then Return SetError(1, 0, "")
+	; ---
+	Return $__OpenedProjects[$iProjectID][0] = $sName
 EndFunc
 
 Func __OpenProject_GetName($iProjectID)
