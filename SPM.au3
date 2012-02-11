@@ -2,6 +2,10 @@
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_Icon=res\icon.ico
 #AutoIt3Wrapper_Compression=4
+#AutoIt3Wrapper_Res_Comment=A simple Project Manager For Scite4AutoIt. Made with AutoIt, for AutoIt.
+#AutoIt3Wrapper_Res_Description=Scite Project Manager
+#AutoIt3Wrapper_Res_Fileversion=1.0.0.0
+#AutoIt3Wrapper_Res_LegalCopyright=Matwachich - 2012
 #AutoIt3Wrapper_Res_requestedExecutionLevel=asInvoker
 #AutoIt3Wrapper_Res_Icon_Add=res\ico_project.ico
 #AutoIt3Wrapper_Res_Icon_Add=res\ico_folder.ico
@@ -16,16 +20,18 @@
 #AutoIt3Wrapper_Res_Icon_Add=res\btn\btn_newFolder.ico
 #AutoIt3Wrapper_Res_Icon_Add=res\btn\btn_delete.ico
 #AutoIt3Wrapper_Res_Icon_Add=res\project.ico
+#AutoIt3Wrapper_Run_After=copy /Y "%out%" "%scitedir%\SciteProjectManager\SPM.exe"
+#AutoIt3Wrapper_Run_After=copy /Y %scriptdir%\Lang\Francais.lng" "%scitedir%\SciteProjectManager\lang\Francais.lng"
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 
 #cs ----------------------------------------------------------------------------
-	
+
 	AutoIt Version: 3.3.8.1
 	Author:         Matwachich
-	
+
 	Script Function:
 		Project Manager for SciTE4AutoIt
-	
+
 #ce ----------------------------------------------------------------------------
 
 Opt("GUICloseOnEsc", 0)
@@ -56,6 +62,7 @@ Global Const $__ResDir = @ScriptDir & "\res"
 Global $__TV_DragMode = 0, $__TV_Drag_hItem = 0, $__Version = "1.0.0.0"
 Global $__TV_EditedItem = 0
 Global $__Au3Dir = RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\AutoIt v3\AutoIt", "InstallDir")
+Global $__RunFromScite = 0
 Global $__User32_Dll = DllOpen("user32.dll")
 
 #include "Lang.au3"
@@ -86,6 +93,7 @@ If Not @Compiled Then
 	HotKeySet("!t", "_Debug_ShowArray_TV")
 	HotKeySet("!p", "_Debug_ShowArray_Projects")
 	HotKeySet("!a", "_Debug_Show_ActifProject")
+	;HotKeySet("!s", "_Debug_Show_SortTest")
 EndIf
 
 While 1
@@ -217,7 +225,7 @@ Func _OnExit()
 	; ---
 	_AutoCfg_SetEntry("last_workingDir", @WorkingDir)
 	; ---
-	If WinExists("[Class:SciTEWindow]") And _Ask(LNG("ask_closeScite")) Then
+	If $__RunFromScite = 0 And WinExists("[Class:SciTEWindow]") And _Ask(LNG("ask_closeScite")) Then
 		WinClose("[Class:SciTEWindow]")
 	Else
 		_Scite_Maximize() ; maximize
@@ -235,12 +243,12 @@ Func WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
 	$tNMHDR = DllStructCreate($tagNMHDR, $ilParam)
 	$hWndFrom = HWnd(DllStructGetData($tNMHDR, "hWndFrom"))
 	$iCode = DllStructGetData($tNMHDR, "Code")
-	
+
 	Switch $hWndFrom
 		; TreeView
 		Case $__hTree
 			Switch $iCode
-				;Case $NM_CLICK	
+				;Case $NM_CLICK
 				;	Return 0
 				Case $NM_DBLCLK
 					_Event_TV_DblClick(_GUICtrlTreeView_GetSelection($__hTree))
@@ -334,12 +342,12 @@ Func WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
 			EndSwitch
 			Return $GUI_RUNDEFMSG
 	EndSwitch
-	
+
 	; ##############################################################
 	; ToolTips
 	$tInfo = DllStructCreate($tagNMTTDISPINFO, $ilParam)
 	$iCode = DllStructGetData($tInfo, "Code")
-	
+
 	If $iCode = $TTN_GETDISPINFOW Then
 		$iID = DllStructGetData($tInfo, "IDFrom")
 		Switch $iID
@@ -357,6 +365,6 @@ Func WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
 				DllStructSetData($tInfo, "aText", StringReplace(LNG("Menu_Delete"), @TAB, " "))
 		EndSwitch
 	EndIf
-	
+
 	Return $GUI_RUNDEFMSG
 EndFunc   ;==>WM_NOTIFY

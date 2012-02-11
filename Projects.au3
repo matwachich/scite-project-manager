@@ -69,6 +69,7 @@ Func _LoadProject($sFile, $iFromWorkspace = 0)
 		__TV_ExpandItems($aToExpend)
 		; ---
 		_GuiCtrlTreeView_EnsureVisible($__hTree, $hCtrl)
+		_Project_Sort($iProjectID)
 	Next
 	; cette boucle ne sert pas à grand chose, car il n'y a qu'un seul projet par fichier
 EndFunc
