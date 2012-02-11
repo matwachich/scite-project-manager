@@ -47,6 +47,7 @@ Func __Lang_LoadDefault()
 	__LNG_Add("Menu_AddFolder",		"Add Folder	(Ctrl+F)")
 	__LNG_Add("Menu_Delete",		"Delete	(Del)")
 	__LNG_Add("Menu_Misc",			"&Misc")
+	__LNG_Add("Menu_RunScite",		"Run SciTE")
 	__LNG_Add("Menu_Cfg",			"Configuration")
 	__LNG_Add("Menu_Bug",			"Bug Report")
 	__LNG_Add("Menu_About",			"About")
@@ -56,6 +57,9 @@ Func __Lang_LoadDefault()
 	__LNG_Add("cfg_lng",			"Language")
 	__LNG_Add("cfg_hist_1",			"Max. entries in Projects/Workspaces History")
 	__LNG_Add("cfg_hist_2",			"0 means deactivated")
+	__LNG_Add("cfg_renameAsk",		"Ask confirmation before renaming files")
+	__LNG_Add("cfg_renameBack",		"Make backup of renamed files")
+	__LNG_Add("cfg_minToTray",		"Minimize to Tray")
 	__LNG_Add("cfg_assoc",			"Associate *.auproj and *.auwork with SPM")
 	__LNG_Add("cfg_mb_lngChange",	"The language will change after program restart")
 	; ---
@@ -68,6 +72,10 @@ Func __Lang_LoadDefault()
 	__LNG_Add("CMenu_Rename",		"Rename")
 	__LNG_Add("CMenu_Browse",		"Open Containing Folder")
 	; ---
+	; SciTE
+	__LNG_Add("scite_au3notfound",	"AutoIt3 is not installed on this system.\nDo you want to launch Scite Project Manager anyway?")
+	__LNG_Add("scite_nolaunch",		"Impossible to launch SciTE.\nDo you want to launch Scite Project Manager anyway?")
+	; ---
 	; Prompt
 	__LNG_Add("prompt_new",					"Enter project's name")
 	__LNG_Add("prompt_new_path",			"New Project's Path")
@@ -75,25 +83,31 @@ Func __Lang_LoadDefault()
 	__LNG_Add("prompt_save",				'Save Project: "%s"')
 	__LNG_Add("prompt_addFile",				"Add File(s)")
 	__LNG_Add("prompt_addFolder",			"Add Folder")
-	__LNG_Add("prompt_confirmFileRename",	"The file will be renamed in disk. Make sure that any modifications are saved.\nDo you want to continue?")
+	__LNG_Add("prompt_confirmFileRename",	"The file will be renamed in disk. Make sure that any modifications are saved.\nDo you want to continue?\n(You can disable this notification in the Options window)")
 	; ---
 	; Questions
 	__LNG_Add("ask_save",			'The project "%s" has been modified.\r\nDo you want to save the modifications?')
 	__LNG_Add("ask_deleteFile",		'Are you sure you want to delete the file "%s"?\r\n(The files are not deleted from disk)')
 	__LNG_Add("ask_deleteFolder",	'Are you sure you want to delete the folder "%s" and ALL IT''S CONTENT?\r\n(The files are not deleted from disk)')
+	__LNG_Add("ask_closeScite",		'Do you want to close SciTE?')
 	; ---
 	; Errors
 	__LNG_Add("err_cannotSave",		"Impossible to save to the specified file.")
 	__LNG_Add("err_invalidFile",	"The file specified is invalid:\r\n%s")
+	__LNG_Add("err_FileNotFound",	"%s\nFile not found. Do you want to create it?")
 	;__LNG_Add("err_drag_Folder",	"The folder that you want to drag contains another folder." & @CRLF & "Impossible to continue")
 	; ---
 	; About
 	__LNG_Add("about", "Scite Project Manager - by Matwachich (2012)\r\nThe Project Manager for AutoIt3\r\n\r\n" & _
-						"Thanks to:\r\n\tZDS - Parsing an xml file\r\n\tTlem - Fixing GUI Size\r\n\t" & _
-						"The entire french and english AutoIt Community!")
+						"Thanks to:\r\nZDS - Parsing an xml file\r\nTlem - Fixing GUI Size\r\n" & _
+						"Mat - Contextual Menu in a TreeView Control\r\n" & _
+						"The AutoIt Creators and the entire french and english AutoIt Community!")
 	__LNG_Add("about_tip_title", "Project's page (Google Code)")
 	__LNG_Add("about_tip_com", "The AutoIt Website")
 	__LNG_Add("about_tip_fr", "AutoIt French Community")
+	; ---
+	; Tray
+	__LNG_Add("tray_tip", "Scite Project Manager\nClick to restore")
 EndFunc
 ; ---
 

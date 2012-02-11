@@ -197,7 +197,8 @@ EndFunc
 Func __OpenProject_SetName($iProjectID, $sName)
 	If $iProjectID > $__OpenedProjects[0][0] Then Return SetError(1, 0, "")
 	; ---
-	Return $__OpenedProjects[$iProjectID][0] = $sName
+	$__OpenedProjects[$iProjectID][0] = $sName
+	Return 1
 EndFunc
 
 Func __OpenProject_GetName($iProjectID)
@@ -235,6 +236,7 @@ Func __OpenProject_SetModified($iProjectID, $iModified = 1)
 	;ConsoleWrite("Set Modified: " & $iProjectID & " = " & $iModified & @CRLF)
 	; ---
 	Local $text = _GuiCtrlTreeView_GetText($__hTree, $__OpenedProjects[$iProjectID][2])
+	ConsoleWrite($text & @CRLF)
 	If $iModified Then
 		If StringRight($text, 2) <> " *" Then _
 			_GuiCtrlTreeView_SetText($__hTree, $__OpenedProjects[$iProjectID][2], $text & " *")

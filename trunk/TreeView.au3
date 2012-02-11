@@ -92,6 +92,16 @@ Func _TV_ItemGetInfo($hItem)
 	Return $ret
 EndFunc
 
+; retourne le chemin complet d'un fichier
+Func _TV_ItemGetFilePath($hItem)
+	Local $Info = _TV_ItemGetInfo($hItem)
+	If Not IsArray($Info) Then Return SetError(1, 0, 0)
+	If $Info[1] <> "FILE" Then Return SetError(1, 0, 0)
+	; ---
+	Local $Proj = _File_GetPath(__OpenProject_GetPath($Info[2]))
+	Return $Proj & "\" & $Info[3]
+EndFunc
+
 ; ##############################################################
 
 Global $__Int_LastHoverItem = 0
@@ -215,10 +225,18 @@ EndFunc
 #ce
 
 Func _TV_AfterRename($hItem, $sNewText)
+	ConsoleWrite("_TV_AfterRename(" & $hItem & ", " & $sNewText & ")" & @CRLF)
 	Local $Info = _TV_ItemGetInfo($hItem)
 	Switch $Info[1]
 		Case "PROJECT"
 			__OpenProject_SetName($Info[2], $sNewText)
+			; ---
+			; obligé de mettre le texte sur le TreeView manuellement, sinon, la fonction _SetModified d'en bas ne marche pas
+			; et n'affiche pas la petite *
+			_GuiCtrlTreeView_SetText($__hTree, $hItem, $sNewText)
+			__OpenProject_SetModified($Info[2])
+			; Cancel rename
+			Return False
 		Case "FOLDER"
 			; rien a faire
 		Case "FILE"
@@ -247,10 +265,11 @@ Func _TV_AfterRename($hItem, $sNewText)
 					$iIco = 5
 			EndSwitch
 			_GuiCtrlTreeView_SetImageIndex($__hTree, $hItem, $iIco)
+			; ---
+			__OpenProject_SetModified($Info[2])
+			; validate rename
+			Return True
 	EndSwitch
-	; ---
-	__OpenProject_SetModified($Info[2])
-	Return True
 EndFunc
 
 ; ##############################################################

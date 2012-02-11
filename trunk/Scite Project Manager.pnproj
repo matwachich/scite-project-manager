@@ -1,1 +1,21 @@
-<Project name="Scite Project Manager"><Folder name="lib"><File path="lib\ScriptingDictionary.au3"></File><File path="lib\AutoConfig.au3"></File><File path="lib\FileAssoc.au3"></File><File path="lib\GUIMinMax.au3"></File></Folder><Folder name="doc"><File path="ToDo.txt"></File><File path="Mods.txt"></File></Folder><File path="SPM.au3"></File><File path="GUI.au3"></File><File path="Projects.au3"></File><File path="Misc.au3"></File><File path="Lang.au3"></File><File path="TreeView.au3"></File><File path="Events.au3"></File><File path="Config.au3"></File></Project>
+<Project name="Scite Project Manager" exp="True">
+	<Folder name="lib" exp="True">
+		<File path="lib\ScriptingDictionary.au3"></File>
+		<File path="lib\AutoConfig.au3"></File>
+		<File path="lib\FileAssoc.au3"></File>
+		<File path="lib\GUIMinMax.au3"></File>
+	</Folder>
+	<Folder name="doc" exp="True">
+		<File path="ToDo.txt"></File>
+		<File path="Mods.txt"></File>
+	</Folder>
+	<File path="SPM.au3"></File>
+	<File path="GUI.au3"></File>
+	<File path="Projects.au3"></File>
+	<File path="Misc.au3"></File>
+	<File path="Lang.au3"></File>
+	<File path="TreeView.au3"></File>
+	<File path="Events.au3"></File>
+	<File path="Config.au3"></File>
+	<File path="Scite.au3"></File>
+</Project>
