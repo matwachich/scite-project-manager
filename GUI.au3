@@ -44,7 +44,7 @@ Global $Menu_File, _
 Global $Menu_Edit, _
 			$Menu_SetActif, $Menu_AddFile, $Menu_AddFolder, $Menu_Delete
 Global $Menu_Misc, _
-			$Menu_Cfg, $Menu_Bug, $Menu_About
+			$Menu_RunScite, $Menu_Cfg, $Menu_Bug, $Menu_About
 ; ---
 Global $CMenu_Dummy, $CMenu, $hCMenu, _
 			$CMenu_OpenAll, $CMenu_AddFile, $CMenu_AddFolder, $CMenu_Delete, $CMenu_Close, $CMenu_Rename, $CMenu_Browse
@@ -100,6 +100,7 @@ Func _GUI_Main($flag = $__GUI_CREATE)
 					GuiCtrlCreateMenuItem("", $Menu_Edit)
 				$Menu_Delete = GUICtrlCreateMenuItem(LNG("Menu_Delete"), $Menu_Edit)
 			$Menu_Misc = GUICtrlCreateMenu(LNG("Menu_Misc"))
+				$Menu_RunScite = GuiCtrlCreateMenuItem(LNG("Menu_RunScite"), $Menu_Misc)
 				$Menu_Cfg = GUICtrlCreateMenuItem(LNG("Menu_Cfg"), $Menu_Misc)
 					GuiCtrlCreateMenuItem("", $Menu_Misc)
 				$Menu_Bug = GuiCtrlCreateMenuItem(LNG("Menu_Bug"), $Menu_Misc)
@@ -185,7 +186,7 @@ Func _GUI_Main($flag = $__GUI_CREATE)
 			GuiSetAccelerators(__GUI_Main_Accels())
 			; ---
 			_GUI_MinMax_Set($GUI_Main, 180, 300, 300, @DesktopHeight)
-			WinMove($GUI_Main, "", 0, 0, 180, 400)
+			WinMove($GUI_Main, "", 0, 0, _Win_GetSize("x"), _Win_GetSize("y"))
 			; ---
 			;For $i = 0 To 99
 			;	GuiCtrlDelete($dummy[$i])
@@ -263,18 +264,21 @@ Func WM_SIZE($hWnd, $iMsg, $wParam, $lParam)
 	; ---
 	_WinAPI_MoveWindow($__hTree, 2, 26, $w - 4, $h - (4 + 24))
 	; ---
+	; just resize, without activating nor maximizing
+	_Scite_Adapt(1)
+	; ---
     Return 0
 EndFunc
 
 ; ##############################################################
 ; Cfg GUI
-Global $GUI_Cfg, $C_Lang, $I_MaxHistory, $ud_MaxHistory, $C_Assoc, $C_RenameConfirmation, $C_RenameBackup, $B_Ok
+Global $GUI_Cfg, $C_Lang, $I_MaxHistory, $ud_MaxHistory, $C_Assoc, $C_RenameConfirmation, $C_RenameBackup, $C_MinToTray, $B_Ok
 
 Func _GUI_Cfg($flag = $__GUI_CREATE)
 	Switch $flag
 		Case $__GUI_CREATE
 			#Region ### START Koda GUI section ### Form=GUI_Cfg.kxf
-			$GUI_Cfg = GUICreate(LNG("cfg_title"), 254, 216, -1, -1, -1, -1, $GUI_Main)
+			$GUI_Cfg = GUICreate(LNG("cfg_title"), 254, 236, -1, -1, -1, -1, $GUI_Main)
 			GUICtrlCreateLabel(LNG("cfg_lng"), 18, 18, 58, 17)
 			GUICtrlCreateLabel(LNG("cfg_hist_1"), 18, 48, 213, 17)
 			GUICtrlCreateLabel(LNG("cfg_hist_2"), 18, 69, 115, 17)
@@ -282,11 +286,12 @@ Func _GUI_Cfg($flag = $__GUI_CREATE)
 			$I_MaxHistory = GUICtrlCreateInput("", 132, 66, 97, 21, $SS_RIGHT)
 				$ud_MaxHistory = GuiCtrlCreateUpDown($I_MaxHistory)
 				GuiCtrlSetLimit($ud_MaxHistory, 15, 0)
-			$C_Assoc = GUICtrlCreateCheckbox(LNG("cfg_assoc"), 15, 150, 223, 17)
+			$C_RenameConfirmation = GUICtrlCreateCheckbox(LNG("cfg_renameAsk"), 15, 102, 229, 17)
+			$C_RenameBackup = GUICtrlCreateCheckbox(LNG("cfg_renameBack"), 15, 120, 229, 17)
+			$C_MinToTray = GUICtrlCreateCheckbox(LNG("cfg_minToTray"), 15, 144, 217, 17)
+			$C_Assoc = GUICtrlCreateCheckbox(LNG("cfg_assoc"), 15, 168, 223, 17)
 				If Not @compiled Then GuiCtrlSetState($C_Assoc, $GUI_DISABLE)
-			$C_RenameConfirmation = GUICtrlCreateCheckbox("Ask confirmation before renaming files", 15, 102, 229, 17)
-			$C_RenameBackup = GUICtrlCreateCheckbox("Make backup of renamed files", 15, 120, 229, 17)
-			$B_Ok = GUICtrlCreateButton("OK", 89, 180, 75, 25)
+			$B_Ok = GUICtrlCreateButton("OK", 89, 198, 75, 25)
 			#EndRegion ### END Koda GUI section ###
 		Case $__GUI_SHOW
 			GuiSetState(@SW_SHOW, $GUI_Cfg)

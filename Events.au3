@@ -212,11 +212,7 @@ Func _Event_OpenAll()
 	; ---
 	Local $info
 	For $i = 1 To $child[0]
-		$info = _TV_ItemGetInfo($child[$i])
-		If $info[1] = "FILE" Then
-			; EVENT: Ouverture de fichier dans SciTE
-			ConsoleWrite("Open: " & $info[3] & @CRLF)
-		EndIf
+		_Event_TV_DblClick($child[$i])
 	Next
 EndFunc
 
@@ -247,14 +243,23 @@ EndFunc
 
 ; ##############################################################
 
+; open file in SciTE
 Func _Event_TV_DblClick($hItem)
-	Local $info = _TV_ItemGetInfo($hItem)
-	Switch $info[1]
-		;Case "PROJECT"
-		;	__SetActifProject($info[2])
-		Case "FILE"
-			; Ouverture du fichier, après vérification de son existence
-	EndSwitch
+	Local $sFile = _TV_ItemGetFilePath($hItem)
+	If Not $sFile Or @error Then Return
+	; ---
+	If Not FileExists($sFile) Then
+		If _Ask(LNG("err_FileNotFound", $sFile)) Then
+			_File_Create($sFile)
+		Else
+			Return
+		EndIf
+	EndIf
+	; ---
+	If _Scite_Init() Then _Scite_Adapt()
+	; ---
+	ConsoleWrite('"' & $__Au3Dir & '\Scite\Scite.exe" "' & $sFile & '"' & @CRLF)
+	Run('"' & $__Au3Dir & '\Scite\Scite.exe" "' & $sFile & '"')
 EndFunc
 
 Func _Event_TV_RClick($hItem)

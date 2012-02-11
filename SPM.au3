@@ -29,7 +29,10 @@
 #ce ----------------------------------------------------------------------------
 
 Opt("GUICloseOnEsc", 0)
+Opt("TrayMenuMode", 3)
+Opt("TrayOnEventMode", 1)
 
+#include <Constants.au3>
 #include <Array.au3>
 #include <Misc.au3>
 #include "lib\AutoConfig.au3"
@@ -44,12 +47,15 @@ _AutoCfg_Init($ACFG_INI, @ScriptDir & "\spm_config.ini", "SPM_Configuration")
 	; $GUI_CHECKED = 1, $GUI_UNCHECKED = 4
 	_AutoCfg_AddEntry("rename_askConfirmation", 1)
 	_AutoCfg_AddEntry("rename_backupFile", 1)
+	_AutoCfg_AddEntry("minToTray", 1)
+	_AutoCfg_AddEntry("win_size", "180,400")
 _AutoCfg_Update()
 
 Global Const $__ResDir = @ScriptDir & "\res"
 ; ---
 Global $__TV_DragMode = 0, $__TV_Drag_hItem = 0, $__Version = "1.0.0.0"
 Global $__TV_EditedItem = 0
+Global $__Au3Dir = RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\AutoIt v3\AutoIt", "InstallDir")
 Global $__User32_Dll = DllOpen("user32.dll")
 
 #include "Lang.au3"
@@ -59,13 +65,18 @@ Global $__User32_Dll = DllOpen("user32.dll")
 #include "Events.au3"
 #include "Misc.au3"
 #include "Config.au3"
+#include "Scite.au3"
 
 _Lang_Load(CFG("lang_file"))
 
+TraySetOnEvent($TRAY_EVENT_PRIMARYDOWN, "_Tray_Event_Click")
 FileChangeDir(CFG("last_workingDir"))
 
 _GUI_Main()
+_Scite_Init()
+
 _GUI_Main($__GUI_Show)
+_Scite_Adapt()
 
 _CmdLine_Parse()
 
@@ -88,11 +99,21 @@ While 1
 				Case $GUI_EVENT_CLOSE, $Menu_Exit
 					; retourne 0 si il y a eu un clique sur Annuler
 					If _Project_SaveAll() Then Exit
+				Case $GUI_EVENT_MINIMIZE
+					If CFG("minToTray") = $GUI_CHECKED Then
+						_GUI_Main($__GUI_Hide)
+						Opt("TrayIconHide", 0)
+						TraySetToolTip(LNG("tray_tip"))
+					EndIf
+					_Scite_Maximize()
+				Case $GUI_EVENT_MAXIMIZE
+					_Scite_Adapt()
+				; ---
 				Case $Menu_New, $Btn_New
 					_Event_New()
 				Case $Menu_Open, $Btn_Open
 					_Event_Open()
-					; ---
+				; ---
 				Case $Menu_Save, $Btn_Save
 					_Event_Save()
 				Case $Menu_SaveAs
@@ -101,17 +122,17 @@ While 1
 					_Event_SaveAll()
 				Case $Menu_SaveWorkspace
 					_Event_SaveWorkspace()
-					; ---
+				; ---
 				Case $Menu_Close, $CMenu_Close
 					_Event_Close()
 				Case $Menu_CloseAll
 					_Event_Close(1)
-					; ---
+				; ---
 				Case $Menu_LastProject_Flush
 					_Last_Empty(1)
 				Case $Menu_LastWorkspace_Flush
 					_Last_Empty(2)
-					; ---
+				; ---
 				Case $Menu_SetActif
 					_Event_SetActif()
 				Case $Menu_AddFile, $Btn_AddFile, $CMenu_AddFile
@@ -121,6 +142,9 @@ While 1
 				Case $Menu_Delete, $Btn_Delete, $CMenu_Delete
 					_Event_Delete()
 				; ---
+				Case $Menu_RunScite
+					_Scite_Init()
+					_Scite_Adapt()
 				Case $Menu_Cfg
 					_GUI_Cfg()
 					_Cfg_Load()
@@ -178,13 +202,26 @@ While 1
 	; ---
 WEnd
 
+Func _Tray_Event_Click()
+	Opt("TrayIconHide", 1)
+	_GUI_Main($__GUI_Show)
+	_Scite_Adapt()
+EndFunc
+
 Func _OnExit()
+	_Win_SaveSize()
 	; Ce _Event_Close est avec $iDontSave = 1, car on a sauvegarder dans la boucle principale
 	_Event_Close(1, 1)
 	_GUI_Main($__GUI_Delete)
 	DllClose($__User32_Dll)
 	; ---
 	_AutoCfg_SetEntry("last_workingDir", @WorkingDir)
+	; ---
+	If WinExists("[Class:SciTEWindow]") And _Ask(LNG("ask_closeScite")) Then
+		WinClose("[Class:SciTEWindow]")
+	Else
+		_Scite_Maximize() ; maximize
+	EndIf
 EndFunc   ;==>_OnExit
 
 ; ##############################################################

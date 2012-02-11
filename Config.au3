@@ -31,6 +31,9 @@ Func _Cfg_Load()
 	GuiCtrlSetState($C_RenameConfirmation, CFG("rename_askConfirmation"))
 	GuiCtrlSetState($C_RenameBackup, CFG("rename_backupFile"))
 	; ---
+	; Minimize to Tray
+	GuiCtrlSetState($C_MinToTray, CFG("minToTray"))
+	; ---
 	; Assoc
 	Local $get1 = _Assoc_Get(".auproj")
 	Local $get2 = _Assoc_Get(".auwork")
@@ -61,6 +64,9 @@ Func _Cfg_Save()
 	_AutoCfg_SetEntry("rename_askConfirmation", GuiCtrlRead($C_RenameConfirmation))
 	_AutoCfg_SetEntry("rename_backupFile", GuiCtrlRead($C_RenameBackup))
 	; ---
+	; Minimize to Tray
+	_AutoCfg_SetEntry("minToTray", GuiCtrlRead($C_MinToTray))
+	; ---
 	; Assoc
 	If @Compiled Then
 		Switch GuiCtrlRead($C_Assoc)
@@ -83,7 +89,7 @@ EndFunc
 Func __Install_Template($i)
 	If $i Then
 		FileWrite(@WindowsDir & "\SHELLNEW\Template.auproj", '<Project name="New Project">' & @CRLF & '</Project>')
-		RegWrite("HKEY_CLASSES_ROOT\.auproj\shellnew", "FileName", "REG_SZ", "Template.auproj")
+		RegWrite("HKEY_CLASSES_ROOT\.auproj\shellnew", "FileName", "REG_SZ", '"' & @WindowsDir & '\SHELLNEW\Template.auproj"')
 	Else
 		FileDelete(@WindowsDir & "\SHELLNEW\Template.auproj")
 		RegDelete("HKEY_CLASSES_ROOT\.auproj\shellnew", "FileName")

@@ -19,6 +19,24 @@ Func _CmdLine_Parse()
 EndFunc
 
 ; ##############################################################
+
+Func _Win_SaveSize()
+	Local $pos = WinGetPos($GUI_Main)
+	_AutoCfg_SetEntry("win_size", $pos[2] & "," & $pos[3])
+EndFunc
+
+Func _Win_GetSize($iWhat)
+	Local $read = CFG("win_size")
+	$read = StringSplit($read, ",")
+	Switch $iWhat
+		Case "x"
+			Return $read[1]
+		Case "y"
+			Return $read[2]
+	EndSwitch
+EndFunc
+
+; ##############################################################
 ; Historique des projets
 ; iType: 1 = project | 2 = workspace
 
@@ -125,8 +143,8 @@ Func _About()
 	GuiSetState(@SW_DISABLE, $GUI_Main)
 	; ---
 	#Region ### START Koda GUI section ### Form=
-	Local $GUI_About = GUICreate("About", 322, 253, -1, -1, -1, $WS_EX_TOOLWINDOW + $WS_EX_TOPMOST)
-	GUICtrlCreateGroup("", 8, 8, 305, 197)
+	Local $GUI_About = GUICreate("About", 323, 286, -1, -1, -1, $WS_EX_TOOLWINDOW + $WS_EX_TOPMOST)
+	GUICtrlCreateGroup("", 8, 8, 305, 233)
 	Local $L_Spm = GUICtrlCreateLabel("Scite Project Manager", 60, 24, 205, 28)
 		GUICtrlSetFont(-1, 16, 800, 0, "Times New Roman")
 		GuiCtrlSetColor(-1, 0x0011FF)
@@ -134,15 +152,15 @@ Func _About()
 		GuiCtrlSetTip(-1, LNG("about_tip_title"))
 	; ---
 	GUICtrlCreateLabel("v " & $__Version, 60, 54, 205, 17, $SS_CENTER)
-	GUICtrlCreateLabel(LNG("about"), 16, 82, 287, 113)
+	GUICtrlCreateLabel(LNG("about"), 16, 82, 287, 155)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
-	Local $B_OK = GUICtrlCreateButton("&OK", 124, 220, 75, 25, 0)
+	Local $B_OK = GUICtrlCreateButton("&OK", 124, 250, 75, 25)
 	; ---
-	Local $L_Com = GUICtrlCreateLabel("AutoItScript.com", 12, 216, 82, 17)
+	Local $L_Com = GUICtrlCreateLabel("AutoItScript.com", 12, 246, 82, 17)
 		GuiCtrlSetColor(-1, 0x0011FF)
 		GuiCtrlSetCursor(-1, 0)
 		GuiCtrlSetTip(-1, LNG("about_tip_com"))
-	Local $L_Fr = GUICtrlCreateLabel("AutoItScript.fr", 240, 216, 68, 17)
+	Local $L_Fr = GUICtrlCreateLabel("AutoItScript.fr", 240, 246, 68, 17)
 		GuiCtrlSetColor(-1, 0x0011FF)
 		GuiCtrlSetCursor(-1, 0)
 		GuiCtrlSetTip(-1, LNG("about_tip_fr"))
@@ -189,7 +207,11 @@ Func _File_GetExt($s)
 EndFunc
 
 Func _File_Create($sPath)
-	FileClose(FileOpen($sPath, 10))
+	If _File_GetExt($sPath) = "au3" And FileExists(@WindowsDir & "\shellnew\template.au3") Then
+		FileCopy(@WindowsDir & "\shellnew\template.au3", $sPath)
+	Else
+		FileClose(FileOpen($sPath, 10))
+	EndIf
 EndFunc
 
 ; ##############################################################

@@ -4,7 +4,7 @@
 		<property name="Left" vt="Int16">524</property>
 		<property name="Top" vt="Int16">244</property>
 		<property name="Width" vt="Int16">269</property>
-		<property name="Height" vt="Int16">251</property>
+		<property name="Height" vt="Int16">271</property>
 		<property name="Caption" vt="String">SPM - Options</property>
 		<property name="Color" vt="Ident">clBtnFace</property>
 		<property name="Font.Charset" vt="Ident">DEFAULT_CHARSET</property>
@@ -105,7 +105,7 @@
 		<object type="TACheckbox" name="C_Assoc">
 			<properties>
 				<property name="Left" vt="Int8">15</property>
-				<property name="Top" vt="Int16">150</property>
+				<property name="Top" vt="Int16">168</property>
 				<property name="Width" vt="Int16">223</property>
 				<property name="Height" vt="Int8">17</property>
 				<property name="Caption" vt="String">Associate *.auproj and *.auwork with SPM</property>
@@ -119,7 +119,7 @@
 		<object type="TAButton" name="B_Ok">
 			<properties>
 				<property name="Left" vt="Int8">89</property>
-				<property name="Top" vt="Int16">180</property>
+				<property name="Top" vt="Int16">198</property>
 				<property name="Width" vt="Int8">75</property>
 				<property name="Height" vt="Int8">25</property>
 				<property name="Caption" vt="String">OK</property>
@@ -153,6 +153,20 @@
 				<property name="Height" vt="Int8">17</property>
 				<property name="Caption" vt="String">Make backup of renamed files</property>
 				<property name="TabOrder" vt="Int8">8</property>
+				<property name="CtrlStyle" vt="Int32">1342242819</property>
+				<property name="CtrlExStyle" vt="Int8">0</property>
+				<property name="Resizing" vt="Set">DockHeight</property>
+			</properties>
+			<components/>
+		</object>
+		<object type="TACheckbox" name="C_MinToTray">
+			<properties>
+				<property name="Left" vt="Int8">15</property>
+				<property name="Top" vt="Int16">144</property>
+				<property name="Width" vt="Int16">217</property>
+				<property name="Height" vt="Int8">17</property>
+				<property name="Caption" vt="String">Minimize to Tray</property>
+				<property name="TabOrder" vt="Int8">9</property>
 				<property name="CtrlStyle" vt="Int32">1342242819</property>
 				<property name="CtrlExStyle" vt="Int8">0</property>
 				<property name="Resizing" vt="Set">DockHeight</property>
