@@ -27,13 +27,10 @@ cfg_title=SPM - Configuration
 cfg_lng=Langue
 cfg_hist_1=Nombre maximum de projet/groupe récents
 cfg_hist_2=0 pour désactiver
-cfg_renameask=Ask confirmation before renaming files
-			  Demander confirmation (renommer fichier)
-cfg_renameback=Make backup of renamed files
-               Faire une sauvegarde des fichiers renommés
+cfg_renameask=Demander confirmation (renommer fichier)
+cfg_renameback=Faire une sauvegarde des fichiers renommés
 cfg_mintotray=Minimizer dans le Tray
-cfg_assoc=Associate *.auproj and *.auwork with SPM
-          Associer *.auproj et *.auwork avec SPM
+cfg_assoc=Associer *.auproj et *.auwork avec SPM
 cfg_mb_lngchange=La langue changera après redémarrage de l'application
 cmenu_openall=Ouvrir tous les fichiers
 cmenu_close=Fermer le projet

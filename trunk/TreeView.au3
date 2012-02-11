@@ -43,6 +43,7 @@ Func _TV_Add($sText, $sType, $hParent, $sPath = "", $iProjectID = "")
 			_TV_ItemSetInfo($hCtrl, "FOLDER|" & $iProjectID, $iProjectID)
 	EndSwitch
 	; ---
+	_Project_Sort($iProjectID)
 	Return $hCtrl
 EndFunc
 
@@ -238,7 +239,9 @@ Func _TV_AfterRename($hItem, $sNewText)
 			; Cancel rename
 			Return False
 		Case "FOLDER"
-			; rien a faire
+			__OpenProject_SetModified($Info[2])
+			; validate rename
+			Return True
 		Case "FILE"
 			If CFG("rename_askConfirmation") = $GUI_CHECKED And Not _Ask(LNG("prompt_confirmFileRename")) Then Return False
 			; ---

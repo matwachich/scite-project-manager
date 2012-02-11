@@ -196,6 +196,7 @@ Func _Event_Delete()
 				_TV_AssocInfo_Del($hItem)
 				_GuiCtrlTreeView_Delete($__hTree, $hItem)
 				; ---
+				_Project_Sort($Info[2])
 				__OpenProject_SetModified($Info[2], 1)
 			EndIf
 	EndSwitch
