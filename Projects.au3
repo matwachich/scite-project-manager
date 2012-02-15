@@ -12,6 +12,7 @@
 Global $__OpenedProjects[1][4] = [[0, "sPath", "hCtrl", "iModified"]] ; name, path, $hCtrl, $iModified
 Global $__ActifProject = 0
 
+#Include "TreeView.au3"
 #include <Array.au3>
 #include <String.au3>
 
@@ -308,6 +309,24 @@ EndFunc
 
 ; ##############################################################
 
+; return array[0] = nbr, $array[x] = "file path" (relative)
+Func _Project_GetAllFiles($iProjectID)
+	If $iProjectID > $__OpenedProjects[0][0] Then Return SetError(1, 0, 0)
+	; ---
+	Local $ret[1] = [0], $tmp
+	; ---
+	For $i = 1 To $__TV_Assoc[0][0]
+		$tmp = StringSplit($__TV_Assoc[$i][1], "|")
+		If $tmp[1] = "FILE" And $tmp[2] = $iProjectID Then
+			ReDim $ret[$ret[0] + 2]
+			$ret[0] += 1
+			$ret[$ret[0]] = $tmp[3]
+		EndIf
+	Next
+	; ---
+	Return $ret
+EndFunc
+
 Func __SetActifProject($iID = Default)
 	If $iID <> Default Then
 		If $iID <> 0 And ($iID > $__OpenedProjects[0][0] Or $iID <= 0) Then Return
@@ -324,6 +343,9 @@ Func __SetActifProject($iID = Default)
 		$__ActifProject = $iID
 		_GuiCtrlTreeView_SetBold($__hTree, $__OpenedProjects[$__ActifProject][2], True)
 		;ConsoleWrite("Set Bold: " & $__OpenedProjects[$__ActifProject][0] & @CRLF)
+		; ---
+		; Set new working directory
+		If CFG("workdir_onActivate") = $GUI_CHECKED Then FileChangeDir(_File_GetPath($__OpenedProjects[$__ActifProject][1]))
 	EndIf
 	#cs
 	; ---

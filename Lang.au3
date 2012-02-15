@@ -16,16 +16,40 @@ Global $oLangDic = _SD_Create()
 ;_Lang_Load()
 ;_SD_ToIni($oLangDic, @ScriptDir & "\Lang\English.lng", "SPM_Language")
 
-Func _Lang_Load($sFileName = "")
-	Local $sFilePath = @ScriptDir & "\lang\" & $sFileName
-	If Not FileExists($sFilePath) Or $sFileName = "English" Then Return __Lang_LoadDefault()
+Func _Lang_Load()
+	Local $iNotifLangChange = 0
+	If Not FileExists(@ScriptDir & "\first_launch") Then
+		Switch @OSLang
+			Case "0409", "0809", "0c09", "1009", "1409", "1809", "1c09", "2009", "2409", "2809", "2c09", "3009", "3409"
+				_AutoCfg_SetEntry("lang_file", "English.lng")
+			Case "040c", "080c", "0c0c", "100c", "140c", "180c"
+				_AutoCfg_SetEntry("lang_file", "Francais.lng")
+		EndSwitch
+		$iNotifLangChange = 1
+	EndIf
 	; ---
-	_SD_FromIni($oLangDic, $sFilePath, "SPM_Language")
+	Local $sFilePath = @ScriptDir & "\lang\" & CFG("lang_file")
+	If FileExists($sFilePath) And CFG("lang_file") <> "English.lng" Then _SD_FromIni($oLangDic, $sFilePath, "SPM_Language")
+	; ---
+	Local $list = _SD_List(-1)
+	_ArrayDisplay($list)
 	__Lang_LoadDefault()
+	Local $list = _SD_List(-1)
+	_ArrayDisplay($list)
+	; ---
+	If $iNotifLangChange Then MsgBox(64, LNG("progName"), LNG("first_langSet", StringLeft(CFG("lang_file"), StringInStr(CFG("lang_file"), ".", 1, -1) - 1)))
 EndFunc
 
 Func __Lang_LoadDefault()
-	__LNG_Add("ProgName", 			"Scite Project Manager")
+	__LNG_Add("ProgName", 					"Scite Project Manager")
+	; ---
+	; First Launch
+	__LNG_Add("first_langSet", 				'The program language has been set to "%s", you can change this in the options')
+	__LNG_Add("first_prompt_findScite",		"Find SciTE.exe")
+	__LNG_Add("first_err_sciteNotFound",	"SciTE.exe not found.\nPlease install AutoIt3 and SciTE4AutoIt (http://www.autoitscript.com)")
+	__LNG_Add("first_ask_sciteRelative",	"Do you want to keep it as relative path? (Ideal for portable version of AutoIt)")
+	__LNG_Add("first_ask_assoc",			'Do you want to associate AutoIt Project (*.auproj) and AutoIt Project Group (*.auwork) file extensions with Scite Project Manager?')
+	__LNG_Add("first_ask_sciteAdapt",		'Do you want the SciTE window size be adapted to the SPM window?')
 	; ---
 	; GUI Main
 	__LNG_Add("Menu_File",			"&File")
@@ -43,6 +67,7 @@ Func __Lang_LoadDefault()
 	__LNG_Add("Menu_Exit",			"Exit")
 	__LNG_Add("Menu_Edit",			"&Edit")
 	__LNG_Add("Menu_SetActif",		"Set Actif Project")
+	__LNG_Add("Menu_Search",		"Search In Project Files")
 	__LNG_Add("Menu_AddFile",		"Add File(s)	(Ctrl+A)")
 	__LNG_Add("Menu_AddFolder",		"Add Folder	(Ctrl+F)")
 	__LNG_Add("Menu_Delete",		"Delete	(Del)")
@@ -53,15 +78,21 @@ Func __Lang_LoadDefault()
 	__LNG_Add("Menu_About",			"About")
 	; ---
 	; GUI Cfg
-	__LNG_Add("cfg_title",			"SPM - Configuration")
-	__LNG_Add("cfg_lng",			"Language")
-	__LNG_Add("cfg_hist_1",			"Max. entries in Projects/Workspaces History")
-	__LNG_Add("cfg_hist_2",			"0 means deactivated")
-	__LNG_Add("cfg_renameAsk",		"Ask confirmation before renaming files")
-	__LNG_Add("cfg_renameBack",		"Make backup of renamed files")
-	__LNG_Add("cfg_minToTray",		"Minimize to Tray")
-	__LNG_Add("cfg_assoc",			"Associate *.auproj and *.auwork with SPM")
-	__LNG_Add("cfg_mb_lngChange",	"The language will change after program restart")
+	__LNG_Add("cfg_title",				"SPM - Configuration")
+	__LNG_Add("cfg_lng",				"Language")
+	__LNG_Add("cfg_hist_1",				"Max. entries in Projects/Workspaces History")
+	__LNG_Add("cfg_hist_2",				"0 means deactivated")
+	__LNG_Add("cfg_renameAsk",			"Ask confirmation before renaming files")
+	__LNG_Add("cfg_renameBack",			"Make backup of renamed files")
+	__LNG_Add("cfg_adaptScite",			"Adapt SciTE window to SPM")
+	__LNG_Add("cfg_minToTray",			"Minimize to Tray")
+	__LNG_Add("cfg_workdirOnActivate",	"Update working directory on project activation")
+	__LNG_Add("cfg_assoc",				"Associate *.auproj and *.auwork with SPM")
+	__LNG_Add("cfg_mb_lngChange",		"The language will change after program restart")
+	; ---
+	; Search
+	__LNG_Add("search_guiTitle",	"Search Result")
+	__LNG_Add("search_LVHeader",	"File|Line N°|Line")
 	; ---
 	; Context Menu
 	__LNG_Add("CMenu_OpenAll",		"Open All Files")
@@ -73,7 +104,6 @@ Func __Lang_LoadDefault()
 	__LNG_Add("CMenu_Browse",		"Open Containing Folder")
 	; ---
 	; SciTE
-	__LNG_Add("scite_au3notfound",	"AutoIt3 is not installed on this system.\nDo you want to launch Scite Project Manager anyway?")
 	__LNG_Add("scite_nolaunch",		"Impossible to launch SciTE.\nDo you want to launch Scite Project Manager anyway?")
 	; ---
 	; Prompt
@@ -84,17 +114,19 @@ Func __Lang_LoadDefault()
 	__LNG_Add("prompt_addFile",				"Add File(s)")
 	__LNG_Add("prompt_addFolder",			"Add Folder")
 	__LNG_Add("prompt_confirmFileRename",	"The file will be renamed in disk. Make sure that any modifications are saved.\nDo you want to continue?\n(You can disable this notification in the Options window)")
+	__LNG_Add("prompt_Search",				"Enter a keyword to search for within projet files.\nYou can enter multiple keywords separated with ;\n(Wildcard supported *)")
 	; ---
 	; Questions
-	__LNG_Add("ask_save",			'The project "%s" has been modified.\r\nDo you want to save the modifications?')
-	__LNG_Add("ask_deleteFile",		'Are you sure you want to delete the file "%s"?\r\n(The files are not deleted from disk)')
-	__LNG_Add("ask_deleteFolder",	'Are you sure you want to delete the folder "%s" and ALL IT''S CONTENT?\r\n(The files are not deleted from disk)')
-	__LNG_Add("ask_closeScite",		'Do you want to close SciTE?')
+	__LNG_Add("ask_save",				'The project "%s" has been modified.\r\nDo you want to save the modifications?')
+	__LNG_Add("ask_deleteFile",			'Are you sure you want to delete the file "%s"?\r\n(The files are not deleted from disk)')
+	__LNG_Add("ask_deleteFolder",		'Are you sure you want to delete the folder "%s" and ALL IT''S CONTENT?\r\n(The files are not deleted from disk)')
+	__LNG_Add("ask_closeScite",			'Do you want to close SciTE?')
 	; ---
 	; Errors
-	__LNG_Add("err_cannotSave",		"Impossible to save to the specified file.")
-	__LNG_Add("err_invalidFile",	"The file specified is invalid:\r\n%s")
-	__LNG_Add("err_FileNotFound",	"%s\nFile not found. Do you want to create it?")
+	__LNG_Add("err_cannotSave",				"Impossible to save to the specified file.")
+	__LNG_Add("err_invalidFile",			"The file specified is invalid:\r\n%s")
+	__LNG_Add("err_FileNotFound",			"%s\nFile not found. Do you want to create it?")
+	__LNG_Add("err_history_fileNotFound",	"File not found.\nIt will be deleted from the list")
 	;__LNG_Add("err_drag_Folder",	"The folder that you want to drag contains another folder." & @CRLF & "Impossible to continue")
 	; ---
 	; About
@@ -128,7 +160,6 @@ Func LNG($sID, $var1 = "", $var2 = "", $var3 = "", $var4 = "", $var5 = "")
 			$ret = StringFormat(_SD_Get($oLangDic, StringLower($sID)))
 	EndSwitch
 	; ---
-	; ConsoleWrite('LNG("' & $sID & '") - ' & @error & ' = ' & $ret & @CRLF)
 	Return $ret
 EndFunc
 

@@ -42,7 +42,8 @@ _SD_ToIni(-1, @ScriptDir & "\test.ini", "TEST")
 #ce
 ; ##############################################################
 
-; Returns a Scripting.Dictionary Object
+; Description ...: Returns a Scripting.Dictionary Object
+; Syntax.........: _SD_Create()
 Func _SD_Create()
 	Local $ret = ObjCreate("Scripting.Dictionary")
 	$__ScriptingDictionary_LastUsed = $ret
@@ -51,6 +52,9 @@ EndFunc
 
 ; Create a new variable in the Scripting.Dictionary $hSD (-1 for last used Scripting.Dictionary)
 ; or change the value of an existing variable.
+
+; Description ...: Create a new variable in the Scripting.Dictionary $hSD (-1 for last used Scripting.Dictionary) or change the value of an existing variable.
+; Syntax.........: _SD_Set($hSD, $sKey, $Data, $iOverwrite = 1, $iCreateIfNecessary = 1)
 Func _SD_Set($hSD, $sKey, $Data, $iOverwrite = 1, $iCreateIfNecessary = 1)
 	If Not __SD_CheckLast($hSD) Then Return SetError(-1, 0, 0)
 	; ---
@@ -81,6 +85,9 @@ EndFunc
 
 ; Returns the value of a variable, or 0 and sets @error if the variable
 ; doesn't exists
+
+; Description ...: Returns the value of a variable, or 0 and sets @error if the variable doesn't exists
+; Syntax.........: _SD_Get($hSD, $sKey)
 Func _SD_Get($hSD, $sKey)
 	If Not __SD_CheckLast($hSD) Then Return SetError(-1, 0, 0)
 	; ---
@@ -89,6 +96,9 @@ Func _SD_Get($hSD, $sKey)
 EndFunc
 
 ; Delete a variable
+
+; Description ...: Delete a variable
+; Syntax.........: _SD_Del($hSD, $sKey)
 Func _SD_Del($hSD, $sKey)
 	If Not __SD_CheckLast($hSD) Then Return SetError(-1, 0, 0)
 	; ---
@@ -99,6 +109,9 @@ Func _SD_Del($hSD, $sKey)
 EndFunc
 
 ; Checks if a variable exists
+
+; Description ...: Checks if a variable exists
+; Syntax.........: _SD_Exists($hSD, $sKey)
 Func _SD_Exists($hSD, $sKey)
 	If Not __SD_CheckLast($hSD) Then Return SetError(-1, 0, 0)
 	; ---
@@ -106,6 +119,9 @@ Func _SD_Exists($hSD, $sKey)
 EndFunc
 
 ; Returns the number of variables in the $hSD Scripting.Dictionary
+
+; Description ...: Returns the number of variables in the $hSD Scripting.Dictionary
+; Syntax.........: _SD_Count($hSD)
 Func _SD_Count($hSD)
 	If Not __SD_CheckLast($hSD) Then Return SetError(-1, 0, 0)
 	; ---
@@ -117,6 +133,9 @@ EndFunc
 ;	$array[0][0] = Number of variables (n)
 ;	$array[n][0] = Variable name
 ;	$array[n][1] = Variable value
+
+; Description ...: List all variables/values in the $hSD Scripting.Dictionary as a 2D-Array
+; Syntax.........: _SD_List($hSD)
 Func _SD_List($hSD)
 	If Not __SD_CheckLast($hSD) Then Return SetError(-1, 0, 0)
 	; ---
@@ -134,6 +153,9 @@ Func _SD_List($hSD)
 EndFunc
 
 ; Dumps all the variables/values of the $hSD Scripting.Dictionary to an ini file
+
+; Description ...: Dumps all the variables/values of the $hSD Scripting.Dictionary to an ini file
+; Syntax.........: _SD_ToIni($hSD, $sIniPath, $sIniSection, $iDeleteSectionFirst = 1)
 Func _SD_ToIni($hSD, $sIniPath, $sIniSection, $iDeleteSectionFirst = 1)
 	If Not __SD_CheckLast($hSD) Then Return SetError(-1, 0, 0)
 	; ---
@@ -149,6 +171,9 @@ Func _SD_ToIni($hSD, $sIniPath, $sIniSection, $iDeleteSectionFirst = 1)
 EndFunc
 
 ; Reads all the pairs (key/value) of a section in an ini file, and adds them to the $hSD Scripting.Dictionary
+
+; Description ...: Reads all the pairs (key/value) of a section in an ini file, and adds them to the $hSD Scripting.Dictionary
+; Syntax.........: _SD_FromIni($hSD, $sIniPath, $sIniSection, $iOverwrite = 1, $iCreateIfNecessary = 1)
 Func _SD_FromIni($hSD, $sIniPath, $sIniSection, $iOverwrite = 1, $iCreateIfNecessary = 1)
 	If Not __SD_CheckLast($hSD) Then Return SetError(-1, 0, 0)
 	; ---
