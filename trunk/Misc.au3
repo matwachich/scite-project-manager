@@ -4,7 +4,7 @@
  Author:         Matwachich
 
  Script Function:
-	
+
 
 #ce ----------------------------------------------------------------------------
 #Include-Once
@@ -18,6 +18,42 @@ Func _CmdLine_Parse()
 		_LoadWorkspace($CmdLine[$i])
 		_LoadProject($CmdLine[$i])
 	Next
+EndFunc
+
+; ##############################################################
+
+Func _FirstLaunch()
+	; AutoIt Path
+	Local $sPath = CFG("scite_dir")
+	; $sPath est récupéré par défaut du registre
+	If Not FileExists($sPath) Then
+		; On suppose que SPM.exe est dans un sous-répertoire du dossier de SciTE, comme la plupart
+		; des utilitaires de SciTE
+		$sPath = @ScriptDir & "\..\Scite.exe"
+		If Not FileExists($sPath) Then
+			; Si on ne trouve toujours pas SciTE, on ouvre FileOpenDialog
+			$sPath = FileOpenDialog(LNG("first_prompt_findScite"), @WorkingDir, "Executable (*.exe)", 3, "Scite.exe")
+			If Not $sPath Or @error Then _Err(LNG("first_err_sciteNotFound"), 1) ; critical -> Exit
+			If _Ask(LNG("first_ask_sciteRelative")) Then _
+				$sPath = _PathGetRelative(@ScriptDir, $sPath)
+			_AutoCfg_SetEntry("scite_dir", $sPath)
+		EndIf
+	EndIf
+	; ---
+	If FileExists(@ScriptDir & "\first_launch") Then Return
+	; ---
+	; File Association
+	If _Ask(LNG("first_ask_assoc")) Then __Associate(1)
+	; ---
+	; SciTE Adapte
+	If _Ask(LNG("first_ask_sciteAdapt")) Then
+		_AutoCfg_SetEntry("adapt_scite", $GUI_CHECKED)
+	Else
+		_AutoCfg_SetEntry("adapt_scite", $GUI_UNCHECKED)
+	EndIf
+	; ---
+	; mark
+	FileClose(FileOpen(@ScriptDir & "\first_launch", 2))
 EndFunc
 
 ; ##############################################################
@@ -95,6 +131,17 @@ Func _Last_Existes($sPath)
 	Return 0
 EndFunc
 
+Func _Last_Del($sPath) ; marche pas!
+	ConsoleWrite("Last Del:" & $sPath & @CRLF)
+	Local $read = CFG("last_projects")
+	$read = StringReplace($read, "|" & $sPath, "")
+	_AutoCfg_SetEntry("last_workspaces", $read)
+	; ---
+	Local $read = CFG("last_projects")
+	$read = StringReplace($read, "|" & $sPath, "")
+	_AutoCfg_SetEntry("last_workspaces", $read)
+EndFunc
+
 Func _Last_Empty($iType)
 	Local $key
 	Switch $iType
@@ -168,7 +215,7 @@ Func _About()
 		GuiCtrlSetTip(-1, LNG("about_tip_fr"))
 	GUISetState(@SW_SHOW, $GUI_About)
 	#EndRegion ### END Koda GUI section ###
-	
+
 	Local $msg
 	While 1
 		$msg = GuiGetMsg(1)

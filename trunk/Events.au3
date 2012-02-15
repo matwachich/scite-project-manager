@@ -4,7 +4,7 @@
  Author:         Matwachich
 
  Script Function:
-	
+
 
 #ce ----------------------------------------------------------------------------
 #Include-Once
@@ -103,6 +103,15 @@ Func _Event_SetActif()
 	__SetActifProject($Info[2])
 EndFunc
 
+Func _Event_Search()
+	If $__OpenedProjects[0][0] <= 0 Then Return
+	; ---
+	Local $sKey = InputBox(LNG("Menu_Search"), LNG("prompt_Search"))
+	If Not $sKey Or @error Then Return
+	; ---
+	_Search($__ActifProject, $sKey)
+EndFunc
+
 Func _Event_AddFile()
 	;If $__ActifProject = 0 Then Return
 	If $__OpenedProjects[0][0] = 0 Then Return
@@ -149,6 +158,7 @@ Func _Event_AddFile()
 		If Not FileExists($sPath[$i]) Then _File_Create($sPath[$i])
 	Next
 	; ---
+	_Project_Sort($Info[2])
 	__OpenProject_SetModified($Info[2], 1)
 EndFunc
 
@@ -176,6 +186,8 @@ Func _Event_AddFolder()
 	If Not $hItemToAdd Then Return
 	; ---
 	_TV_Add($sName, "folder", $hItemToAdd, "", $Info[2])
+	; ---
+	_Project_Sort($Info[2])
 	__OpenProject_SetModified($Info[2], 1)
 EndFunc
 
@@ -257,10 +269,7 @@ Func _Event_TV_DblClick($hItem)
 		EndIf
 	EndIf
 	; ---
-	If _Scite_Init() Then _Scite_Adapt()
-	; ---
-	ConsoleWrite('"' & $__Au3Dir & '\Scite\Scite.exe" "' & $sFile & '"' & @CRLF)
-	Run('"' & $__Au3Dir & '\Scite\Scite.exe" "' & $sFile & '"')
+	_Scite_OpenFile($sFile)
 EndFunc
 
 Func _Event_TV_RClick($hItem)
@@ -300,6 +309,6 @@ EndFunc
 #cs
 Func _Event_TV_RightClick($hItem)
 	$info = _TV_ItemGetInfo($hItem)
-	
+
 EndFunc
 #ce

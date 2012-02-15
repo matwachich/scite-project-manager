@@ -19,6 +19,7 @@
 #include <GuiToolbar.au3>
 #include <GuiToolTip.au3>
 #include <StaticConstants.au3>
+#Include <GuiListView.au3>
 
 #include "lib\GUIMinMax.au3"
 
@@ -31,7 +32,7 @@ Global $aUtil_MinMax[4]
 
 ; ##############################################################
 ; GUI Main
-Global $GUI_Main
+Global $GUI_Main, $GUI_Main_Dec ; besoin pour envoyer des commandes à SciTE
 Global $__hTree, $__hTreeView_ImageList
 Global $__hToolBar, $__hToolBar_ImageList, $__hToolTip, $__hToolBar_HotItem
 ; ---
@@ -42,7 +43,7 @@ Global $Menu_File, _
 			$Menu_LastWorkspace, _
 				$Menu_LastWorkspace_Flush
 Global $Menu_Edit, _
-			$Menu_SetActif, $Menu_AddFile, $Menu_AddFolder, $Menu_Delete
+			$Menu_SetActif, $Menu_Search, $Menu_AddFile, $Menu_AddFolder, $Menu_Delete
 Global $Menu_Misc, _
 			$Menu_RunScite, $Menu_Cfg, $Menu_Bug, $Menu_About
 ; ---
@@ -54,6 +55,7 @@ Func _GUI_Main($flag = $__GUI_CREATE)
 		Case $__GUI_CREATE
 			#Region ### START Koda GUI section ### Form=GUI_Main.kxf
 			$GUI_Main = GUICreate("SPM", 300, 400, 0, 0, BitOr($GUI_SS_DEFAULT_GUI, $WS_SIZEBOX, $WS_CLIPCHILDREN), $WS_EX_ACCEPTFILES)
+			$GUI_Main_Dec = Dec(StringRight($GUI_Main, 8))
 			; ---
 			; ça, c'est pour faire avancer le compteur des CtrlID, pour qu'il n'y ait plus d'interférences
 			; entre les CMenu et les Contrôles de la GUI (c'est le seul truc que j'ai trouvé!!!)
@@ -94,6 +96,7 @@ Func _GUI_Main($flag = $__GUI_CREATE)
 				$Menu_Exit = GUICtrlCreateMenuItem(LNG("Menu_Exit"), $Menu_File)
 			$Menu_Edit = GUICtrlCreateMenu(LNG("Menu_Edit"))
 				$Menu_SetActif = GUICtrlCreateMenuItem(LNG("Menu_SetActif"), $Menu_Edit)
+				$Menu_Search = GUICtrlCreateMenuItem(LNG("Menu_Search"), $Menu_Edit)
 					GuiCtrlCreateMenuItem("", $Menu_Edit)
 				$Menu_AddFile = GUICtrlCreateMenuItem(LNG("Menu_AddFile"), $Menu_Edit)
 				$Menu_AddFolder = GUICtrlCreateMenuItem(LNG("Menu_AddFolder"), $Menu_Edit)
@@ -181,6 +184,7 @@ Func _GUI_Main($flag = $__GUI_CREATE)
 			_GuiCtrlToolBar_AddButton($__hToolBar, $Btn_AddFolder, 4)
 			_GuiCtrlToolBar_AddButton($__hToolBar, $Btn_Delete, 5)
 			; ---
+			GUIRegisterMsg($WM_COPYDATA, "MY_WM_COPYDATA") ; SciTE Command
 			GUIRegisterMsg($WM_NOTIFY, "WM_NOTIFY")
 			GUIRegisterMsg($WM_SIZE, "WM_SIZE")
 			GuiSetAccelerators(__GUI_Main_Accels())
@@ -208,7 +212,7 @@ Func _GUI_Main($flag = $__GUI_CREATE)
 EndFunc
 
 Func __GUI_Main_Accels()
-	Local $accels[8][2] = _
+	Local $accels[9][2] = _
 		[ _
 			["^n", $Menu_New], _
 			["^o", $Menu_Open], _
@@ -217,7 +221,8 @@ Func __GUI_Main_Accels()
 			["^q", $Menu_Close], _
 			["^a", $Menu_AddFile], _
 			["^f", $Menu_AddFolder], _
-			["{del}", $Menu_Delete] _
+			["{del}", $Menu_Delete], _
+			["^r", $Menu_Search] _
 		]
 	Return $accels
 EndFunc
@@ -255,30 +260,24 @@ Func _GUI_LastMenu_Update()
 	Next
 EndFunc
 
-; ##############################################################
-; Pour redimensionner le TreeView (car il n'a pas de CtrlID)
-
-Func WM_SIZE($hWnd, $iMsg, $wParam, $lParam)
-	Local $w = _WinAPI_LoWord($lParam)
-    Local $h = _WinAPI_HiWord($lParam)
+Func _GUI_LastMenu_Delete($iId)
+	GuiCtrlDelete($__Last[$iId][0])
+	_Last_Del($__Last[$iId][1])
 	; ---
-	_WinAPI_MoveWindow($__hTree, 2, 26, $w - 4, $h - (4 + 24))
-	; ---
-	; just resize, without activating nor maximizing
-	_Scite_Adapt(1)
-	; ---
-    Return 0
+	_ArrayDelete($__Last, $iId)
+	$__Last[0][0] -= 1
 EndFunc
 
 ; ##############################################################
 ; Cfg GUI
-Global $GUI_Cfg, $C_Lang, $I_MaxHistory, $ud_MaxHistory, $C_Assoc, $C_RenameConfirmation, $C_RenameBackup, $C_MinToTray, $B_Ok
+Global $GUI_Cfg, $C_Lang, $I_MaxHistory, $ud_MaxHistory, $C_Assoc, $C_RenameConfirmation, $C_RenameBackup, $C_MinToTray, $C_AdaptScite, $B_Ok
+Global $C_WorkdirOnActivate
 
 Func _GUI_Cfg($flag = $__GUI_CREATE)
 	Switch $flag
 		Case $__GUI_CREATE
 			#Region ### START Koda GUI section ### Form=GUI_Cfg.kxf
-			$GUI_Cfg = GUICreate(LNG("cfg_title"), 254, 236, -1, -1, -1, -1, $GUI_Main)
+			$GUI_Cfg = GUICreate(LNG("cfg_title"), 255, 268, -1, -1, -1, -1, $GUI_Main)
 			GUICtrlCreateLabel(LNG("cfg_lng"), 18, 18, 58, 17)
 			GUICtrlCreateLabel(LNG("cfg_hist_1"), 18, 48, 213, 17)
 			GUICtrlCreateLabel(LNG("cfg_hist_2"), 18, 69, 115, 17)
@@ -286,12 +285,14 @@ Func _GUI_Cfg($flag = $__GUI_CREATE)
 			$I_MaxHistory = GUICtrlCreateInput("", 132, 66, 97, 21, $SS_RIGHT)
 				$ud_MaxHistory = GuiCtrlCreateUpDown($I_MaxHistory)
 				GuiCtrlSetLimit($ud_MaxHistory, 15, 0)
-			$C_RenameConfirmation = GUICtrlCreateCheckbox(LNG("cfg_renameAsk"), 15, 102, 229, 17)
-			$C_RenameBackup = GUICtrlCreateCheckbox(LNG("cfg_renameBack"), 15, 120, 229, 17)
-			$C_MinToTray = GUICtrlCreateCheckbox(LNG("cfg_minToTray"), 15, 144, 217, 17)
-			$C_Assoc = GUICtrlCreateCheckbox(LNG("cfg_assoc"), 15, 168, 223, 17)
+			$C_RenameConfirmation = GUICtrlCreateCheckbox(LNG("cfg_renameAsk"), 15, 102, 240, 17)
+			$C_RenameBackup = GUICtrlCreateCheckbox(LNG("cfg_renameBack"), 15, 120, 240, 17)
+			$C_AdaptScite = GUICtrlCreateCheckbox(LNG("cfg_adaptScite"), 15, 144, 240, 17)
+			$C_MinToTray = GUICtrlCreateCheckbox(LNG("cfg_minToTray"), 15, 162, 240, 17)
+			$C_WorkdirOnActivate = GUICtrlCreateCheckbox(LNG("cfg_workdirOnActivate"), 15, 180, 240, 17)
+			$C_Assoc = GUICtrlCreateCheckbox(LNG("cfg_assoc"), 15, 204, 240, 17)
 				If Not @compiled Then GuiCtrlSetState($C_Assoc, $GUI_DISABLE)
-			$B_Ok = GUICtrlCreateButton("OK", 89, 198, 75, 25)
+			$B_Ok = GUICtrlCreateButton("OK", 89, 234, 75, 25)
 			#EndRegion ### END Koda GUI section ###
 		Case $__GUI_SHOW
 			GuiSetState(@SW_SHOW, $GUI_Cfg)
@@ -301,4 +302,55 @@ Func _GUI_Cfg($flag = $__GUI_CREATE)
 			GuiDelete($GUI_Cfg)
 			$GUI_Cfg = 0
 	EndSwitch
+EndFunc
+
+; ##############################################################
+; GUI Search
+
+Global $GUI_Search, $__hListView
+
+Func _GUI_Search($iMode = $__GUI_Create)
+	Switch $iMode
+		Case $__GUI_Create
+			$GUI_Search = GUICreate(LNG("search_guiTitle"), 312, 312, -1, -1, BitOr($GUI_SS_DEFAULT_GUI, $WS_SIZEBOX, $WS_CLIPCHILDREN), -1, $GUI_Main)
+			$__hListView = _GuiCtrlListView_Create($GUI_Search, LNG("search_LVHeader"), 6, 6, 300, 300, $LVS_REPORT + $LVS_SINGLESEL + $LVS_SHOWSELALWAYS + $LVS_NOSORTHEADER)
+				_GUICtrlListView_SetExtendedListViewStyle($__hListView, $LVS_EX_FULLROWSELECT + $LVS_EX_GRIDLINES)
+			; ---
+			Local $pos = WinGetPos("[Class:SciTEWindow]")
+			If Not IsArray($pos) Then
+				$pos = WinGetPos($GUI_Main)
+				WinMove($GUI_Search, "", $pos[0] + $pos[2], (@DesktopHeight / 3) * 2, @DesktopWidth / 3, @DesktopHeight / 3)
+			Else
+				$pos[1] = ($pos[3] / 3) * 2
+				$pos[3] = $pos[3] / 3
+				WinMove($GUI_Search, "", $pos[0], $pos[1], $pos[2], $pos[3])
+			EndIf
+		Case $__GUI_Show
+			GuiSetState(@SW_SHOW, $GUI_Search)
+		Case $__GUI_Hide
+			GuiSetState(@SW_HIDE, $GUI_Search)
+		Case $__GUI_Delete
+			GUIDelete($GUI_Search)
+			$GUI_Search = 0
+	EndSwitch
+EndFunc
+
+
+; ##############################################################
+; Pour redimensionner le TreeView et le ListView (Search) (car il n'a pas de CtrlID)
+
+Func WM_SIZE($hWnd, $iMsg, $wParam, $lParam)
+	Local $w = _WinAPI_LoWord($lParam)
+    Local $h = _WinAPI_HiWord($lParam)
+	; ---
+	Switch $hWnd
+		Case $GUI_Main
+			_WinAPI_MoveWindow($__hTree, 2, 26, $w - 4, $h - (4 + 24))
+			; just resize, without activating nor maximizing
+			_Scite_Adapt(1)
+		Case $GUI_Search
+			_WinAPI_MoveWindow($__hListView, 6, 6, $w - 12, $h - 12)
+	EndSwitch
+	; ---
+    Return 0
 EndFunc

@@ -1,7 +1,12 @@
 <Project name="Scite Project Manager" exp="True">
 	<Folder name="doc" exp="True">
-		<File path="Mods.txt"></File>
-		<File path="ToDo.txt"></File>
+		<File path="txt\Credits.txt"></File>
+		<File path="txt\Mods.txt"></File>
+		<File path="txt\SciTE_Cmd.txt"></File>
+		<File path="txt\ToDo.txt"></File>
+	</Folder>
+	<Folder name="Lang" exp="True">
+		<File path="Lang\Francais.lng"></File>
 	</Folder>
 	<Folder name="lib" exp="True">
 		<File path="lib\AutoConfig.au3"></File>
@@ -16,6 +21,7 @@
 	<File path="Misc.au3"></File>
 	<File path="Projects.au3"></File>
 	<File path="Scite.au3"></File>
+	<File path="Search.au3"></File>
 	<File path="SPM.au3"></File>
 	<File path="TreeView.au3"></File>
 </Project>

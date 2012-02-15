@@ -43,7 +43,6 @@ Func _TV_Add($sText, $sType, $hParent, $sPath = "", $iProjectID = "")
 			_TV_ItemSetInfo($hCtrl, "FOLDER|" & $iProjectID, $iProjectID)
 	EndSwitch
 	; ---
-	_Project_Sort($iProjectID)
 	Return $hCtrl
 EndFunc
 
@@ -159,6 +158,8 @@ Func __TV_HandleDrag()
 		$__TV_DragMode = 0
 		$__TV_Drag_hItem = 0
 		$__Int_LastHoverItem = 0
+		; ---
+		_Project_Sort($Info[2])
 	EndIf
 EndFunc
 
@@ -228,18 +229,24 @@ EndFunc
 Func _TV_AfterRename($hItem, $sNewText)
 	ConsoleWrite("_TV_AfterRename(" & $hItem & ", " & $sNewText & ")" & @CRLF)
 	Local $Info = _TV_ItemGetInfo($hItem)
+	; ---
+	; annuler le renommage si le nouveau nom est identique à l'ancien, pour éviter de mettre _IsModified pour rien!
+	If $Info[0] = $sNewText Then Return False
+	; ---
 	Switch $Info[1]
 		Case "PROJECT"
 			__OpenProject_SetName($Info[2], $sNewText)
 			; ---
 			; obligé de mettre le texte sur le TreeView manuellement, sinon, la fonction _SetModified d'en bas ne marche pas
-			; et n'affiche pas la petite *
+			; et n'affiche pas la petite *, et on annule le renomage auto (built-in) pour ne pas enlever le *
 			_GuiCtrlTreeView_SetText($__hTree, $hItem, $sNewText)
 			__OpenProject_SetModified($Info[2])
+			_Project_Sort($Info[2])
 			; Cancel rename
 			Return False
 		Case "FOLDER"
 			__OpenProject_SetModified($Info[2])
+			_Project_Sort($Info[2])
 			; validate rename
 			Return True
 		Case "FILE"
@@ -254,22 +261,20 @@ Func _TV_AfterRename($hItem, $sNewText)
 			If CFG("rename_backupFile") = $GUI_CHECKED Then FileCopy($sPath, $sPath & ".bak")
 			FileMove($sPath, $sNewPath)
 			; ---
-			_TV_AssocInfo_Modify($hItem, "FILE|" & $Info[2] & "|" & _PathGetRelative(_File_GetPath(__OpenProject_GetPath($Info[2])), $sNewPath))
+			;_TV_AssocInfo_Modify($hItem, "FILE|" & $Info[2] & "|" & _PathGetRelative(_File_GetPath(__OpenProject_GetPath($Info[2])), $sNewPath))
 			; ---
-			Local $iIco
-			Switch _File_GetExt($sPath)
-				Case "au3"
-					$iIco = 2
-				Case "txt"
-					$iIco = 3
-				Case "ini", "cfg"
-					$iIco = 4
-				Case Else
-					$iIco = 5
-			EndSwitch
-			_GuiCtrlTreeView_SetImageIndex($__hTree, $hItem, $iIco)
+			; je supprime et recrer pour:
+			;	- Mettre à jour l'icone (_SetIconIndex ne marche pas bien)
+			;	- Sort
+			Local $hParent = _GuiCtrlTreeView_GetParentHandle($__hTree, $hItem)
+			; ---
+			_TV_AssocInfo_Del($hItem)
+			_GuiCtrlTreeView_Delete($__hTree, $hItem)
+			; ---
+			_TV_Add($sNewText, "FILE", $hParent, _PathGetRelative(_File_GetPath(__OpenProject_GetPath($Info[2])), $sNewPath), $Info[2])
 			; ---
 			__OpenProject_SetModified($Info[2])
+			_Project_Sort($Info[2])
 			; validate rename
 			Return True
 	EndSwitch

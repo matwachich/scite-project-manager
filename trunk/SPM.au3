@@ -37,6 +37,8 @@
 Opt("GUICloseOnEsc", 0)
 Opt("TrayMenuMode", 3)
 Opt("TrayOnEventMode", 1)
+; For SciTE Director
+Opt("WinSearchChildren", 1)
 
 #include <Constants.au3>
 #include <Array.au3>
@@ -48,20 +50,26 @@ _AutoCfg_Init($ACFG_INI, @ScriptDir & "\spm_config.ini", "SPM_Configuration")
 	_AutoCfg_AddEntry("last_workspaces", "")
 	_AutoCfg_AddEntry("last_saveCount", 5)
 	_AutoCfg_AddEntry("last_workingDir", @ScriptDir)
-	_AutoCfg_AddEntry("lang_file", "English")
+	_AutoCfg_AddEntry("lang_file", "English.lng")
+	_AutoCfg_AddEntry("scite_dir", RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\AutoIt v3\AutoIt", "InstallDir") & "\Scite\Scite.exe")
 	; ---
 	; $GUI_CHECKED = 1, $GUI_UNCHECKED = 4
 	_AutoCfg_AddEntry("rename_askConfirmation", 1)
 	_AutoCfg_AddEntry("rename_backupFile", 1)
 	_AutoCfg_AddEntry("minToTray", 1)
+	_AutoCfg_AddEntry("adapt_scite", 1)
+	_AutoCfg_AddEntry("workdir_onActivate", 1)
 	_AutoCfg_AddEntry("win_size", "180,400")
+	_AutoCfg_AddEntry("winSearch_size", "")
 _AutoCfg_Update()
 
 Global Const $__ResDir = @ScriptDir & "\res"
+Global Const $__Version = "1.0.0.0"
 ; ---
-Global $__TV_DragMode = 0, $__TV_Drag_hItem = 0, $__Version = "1.0.0.0"
+Global $__TV_DragMode = 0, $__TV_Drag_hItem = 0
 Global $__TV_EditedItem = 0
-Global $__Au3Dir = RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\AutoIt v3\AutoIt", "InstallDir")
+
+; si 1, quand on a lancé depuis SciTE, on ne fermera pas SciTE à la fin (voir _onExit)
 Global $__RunFromScite = 0
 Global $__User32_Dll = DllOpen("user32.dll")
 
@@ -73,14 +81,17 @@ Global $__User32_Dll = DllOpen("user32.dll")
 #include "Misc.au3"
 #include "Config.au3"
 #include "Scite.au3"
+#include "Search.au3"
 
-_Lang_Load(CFG("lang_file"))
+_Lang_Load()
 
 TraySetOnEvent($TRAY_EVENT_PRIMARYDOWN, "_Tray_Event_Click")
 FileChangeDir(CFG("last_workingDir"))
 
+_FirstLaunch()
+
 _GUI_Main()
-_Scite_Init()
+_Scite_Run()
 
 _GUI_Main($__GUI_Show)
 _Scite_Adapt()
@@ -93,12 +104,11 @@ If Not @Compiled Then
 	HotKeySet("!t", "_Debug_ShowArray_TV")
 	HotKeySet("!p", "_Debug_ShowArray_Projects")
 	HotKeySet("!a", "_Debug_Show_ActifProject")
-	;HotKeySet("!s", "_Debug_Show_SortTest")
 EndIf
 
 While 1
 	$nMsg = GUIGetMsg(1)
-	If $nMsg[0] > 0 Then ConsoleWrite("Msg From " & $nMsg[1] & ": " & $nMsg[0] & @CRLF)
+	;If $nMsg[0] > 0 Then ConsoleWrite("Msg From " & $nMsg[1] & ": " & $nMsg[0] & @CRLF)
 	; ---
 	Select
 		Case $GUI_Main <> 0 And $nMsg[1] = $GUI_Main
@@ -114,7 +124,7 @@ While 1
 						TraySetToolTip(LNG("tray_tip"))
 					EndIf
 					_Scite_Maximize()
-				Case $GUI_EVENT_MAXIMIZE
+				Case $GUI_EVENT_RESTORE, $GUI_EVENT_MAXIMIZE
 					_Scite_Adapt()
 				; ---
 				Case $Menu_New, $Btn_New
@@ -143,6 +153,8 @@ While 1
 				; ---
 				Case $Menu_SetActif
 					_Event_SetActif()
+				Case $Menu_Search
+					_Event_Search()
 				Case $Menu_AddFile, $Btn_AddFile, $CMenu_AddFile
 					_Event_AddFile()
 				Case $Menu_AddFolder, $Btn_AddFolder, $CMenu_AddFolder
@@ -151,7 +163,7 @@ While 1
 					_Event_Delete()
 				; ---
 				Case $Menu_RunScite
-					_Scite_Init()
+					_Scite_Run()
 					_Scite_Adapt()
 				Case $Menu_Cfg
 					_GUI_Cfg()
@@ -163,8 +175,6 @@ While 1
 				Case $Menu_About
 					_About()
 				; ---
-				;Case $CMenu_SetActif
-				;	ConsoleWrite("> CMenu_SetActif" & @CRLF)
 				;Case $CMenu_Close
 				;	ConsoleWrite("> CMenu_Close" & @CRLF)
 				Case $CMenu_OpenAll
@@ -185,10 +195,18 @@ While 1
 			EndSwitch
 			; ---
 			; Last Project/Workspace
-			For $i = 1 To $__Last[0][0]
+			For $i = $__Last[0][0] To 1 Step -1
 				If $nMsg[0] = $__Last[$i][0] Then
-					_LoadWorkspace($__Last[$i][1])
-					_LoadProject($__Last[$i][1])
+					; ---
+					; vérifie si le fichier existe, sinon, on l'enlève de l'historique
+					If Not FileExists($__Last[$i][1]) Then
+						_Err(LNG("err_history_fileNotFound"))
+						_GUI_LastMenu_Delete($i)
+					Else
+						; ---
+						_LoadWorkspace($__Last[$i][1])
+						_LoadProject($__Last[$i][1])
+					EndIf
 				EndIf
 			Next
 		; ---
@@ -206,6 +224,13 @@ While 1
 					WinActivate($GUI_Main)
 			EndSwitch
 		; ---
+		Case $GUI_Search <> 0 And $nMsg[1] = $GUI_Search
+		; ---
+			Switch $nMsg[0]
+				Case $GUI_EVENT_CLOSE
+					_GUI_Search($__GUI_Delete)
+					$__Search_CurrentResult = 0
+			EndSwitch
 	EndSelect
 	; ---
 WEnd
@@ -217,12 +242,14 @@ Func _Tray_Event_Click()
 EndFunc
 
 Func _OnExit()
+	; Save GUI Size
 	_Win_SaveSize()
 	; Ce _Event_Close est avec $iDontSave = 1, car on a sauvegarder dans la boucle principale
 	_Event_Close(1, 1)
 	_GUI_Main($__GUI_Delete)
 	DllClose($__User32_Dll)
 	; ---
+	; Save current Workdir
 	_AutoCfg_SetEntry("last_workingDir", @WorkingDir)
 	; ---
 	If $__RunFromScite = 0 And WinExists("[Class:SciTEWindow]") And _Ask(LNG("ask_closeScite")) Then
@@ -237,8 +264,9 @@ EndFunc   ;==>_OnExit
 Func WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
 	#forceref $hWnd, $iMsg, $iwParam
 	Local $hWndFrom, $iCode, $tNMHDR, $Info ; TreeView & ToolBar
+	Local $tInfo ; ListView & ToolTips
 	Local $tNMTBHOTITEM, $i_idNew ; ToolBar Only
-	Local $tInfo, $iID ; ToolTips Only
+	Local $iID ; ToolTips Only
 
 	$tNMHDR = DllStructCreate($tagNMHDR, $ilParam)
 	$hWndFrom = HWnd(DllStructGetData($tNMHDR, "hWndFrom"))
@@ -320,7 +348,7 @@ Func WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
 		Case $__hToolBar
 			Switch $iCode
 				Case $NM_LDOWN
-					ConsoleWrite("$NM_LDOWN: Clicked Item: " & $__hToolBar_HotItem & @CRLF)
+					;ConsoleWrite("$NM_LDOWN: Clicked Item: " & $__hToolBar_HotItem & @CRLF)
 					Switch $__hToolBar_HotItem
 						Case $Btn_New
 							_Event_New()
@@ -339,6 +367,15 @@ Func WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
 					$tNMTBHOTITEM = DllStructCreate($tagNMTBHOTITEM, $ilParam)
 					$i_idNew = DllStructGetData($tNMTBHOTITEM, "idNew")
 					$__hToolBar_HotItem = $i_idNew
+			EndSwitch
+			Return $GUI_RUNDEFMSG
+		; ---
+		; List View (Search)
+		Case $__hListView
+			Switch $iCode
+				Case $NM_DBLCLK
+					$tInfo = DllStructCreate($tagNMITEMACTIVATE, $ilParam)
+					_Search_Event_OpenResult(DllStructGetData($tInfo, "Index"))
 			EndSwitch
 			Return $GUI_RUNDEFMSG
 	EndSwitch
