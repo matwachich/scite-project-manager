@@ -1,5 +1,6 @@
 <Project name="Scite Project Manager" exp="True">
 	<Folder name="doc" exp="True">
+		<File path="txt\Change_Log.txt"></File>
 		<File path="txt\Credits.txt"></File>
 		<File path="txt\Mods.txt"></File>
 		<File path="txt\SciTE_Cmd.txt"></File>

@@ -137,6 +137,7 @@ EndFunc
 
 Func __Install_Template($i)
 	If $i Then
+		FileDelete(@WindowsDir & "\SHELLNEW\Template.auproj")
 		FileWrite(@WindowsDir & "\SHELLNEW\Template.auproj", '<Project name="New Project">' & @CRLF & '</Project>')
 		RegWrite("HKEY_CLASSES_ROOT\.auproj\shellnew", "FileName", "REG_SZ", '"' & @WindowsDir & '\SHELLNEW\Template.auproj"')
 	Else

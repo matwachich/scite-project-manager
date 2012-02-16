@@ -151,11 +151,13 @@ Func _Event_AddFile()
 	Local $projPath = _File_GetPath(__OpenProject_GetPath($Info[2]))
 	; ---
 	For $i = 1 To $sPath[0]
+		; création du fichier avant de prendre le chemin relatif, pour éviter de la créer au mauvais endroit!
+		If Not FileExists($sPath[$i]) Then _File_Create($sPath[$i])
+		; ---
 		$sPath[$i] = _PathGetRelative($projPath, $sPath[$i])
 		; ---
 		_TV_Add(_File_GetName($sPath[$i]), "file", $hItemToAdd, $sPath[$i], $Info[2])
 		__TV_ExpandItems($hItemToAdd)
-		If Not FileExists($sPath[$i]) Then _File_Create($sPath[$i])
 	Next
 	; ---
 	_Project_Sort($Info[2])
