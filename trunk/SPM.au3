@@ -4,7 +4,7 @@
 #AutoIt3Wrapper_Compression=4
 #AutoIt3Wrapper_Res_Comment=A simple Project Manager For Scite4AutoIt. Made with AutoIt, for AutoIt.
 #AutoIt3Wrapper_Res_Description=Scite Project Manager
-#AutoIt3Wrapper_Res_Fileversion=1.0.0.0
+#AutoIt3Wrapper_Res_Fileversion=1.2.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Matwachich - 2012
 #AutoIt3Wrapper_Res_requestedExecutionLevel=asInvoker
 #AutoIt3Wrapper_Res_Icon_Add=res\ico_project.ico
@@ -44,7 +44,19 @@ Opt("WinSearchChildren", 1)
 #include <Array.au3>
 #include <Misc.au3>
 #include "lib\AutoConfig.au3"
+#include "lib\Messages.au3"
+; ---
 
+; si une occurence existe déja, on envoit l'instruction d'ouvrir les fichiers et on ferme
+If Not StringInStr($CmdLineRaw, "/restart") And Not _Singleton("SCITE_PROJECT_MANAGER_SINGLETON_OCCURENCE_NAME", 1) Then
+	For $i = 1 To $CmdLine[0]
+		_MsgSend("SCITE_PROJECT_MANAGER_MESSAGES_RECEIVER", "open|" & $CmdLine[$i])
+	Next
+	WinActivate("SPM")
+	Exit
+EndIf
+
+; ---
 _AutoCfg_Init($ACFG_INI, @ScriptDir & "\spm_config.ini", "SPM_Configuration")
 	_AutoCfg_AddEntry("last_projects", "")
 	_AutoCfg_AddEntry("last_workspaces", "")
@@ -64,7 +76,7 @@ _AutoCfg_Init($ACFG_INI, @ScriptDir & "\spm_config.ini", "SPM_Configuration")
 _AutoCfg_Update()
 
 Global Const $__ResDir = @ScriptDir & "\res"
-Global Const $__Version = "1.0.0.0"
+Global Const $__Version = "1.2"
 ; ---
 Global $__TV_DragMode = 0, $__TV_Drag_hItem = 0
 Global $__TV_EditedItem = 0
@@ -98,12 +110,15 @@ _Scite_Adapt()
 
 _CmdLine_Parse()
 
+_MsgRegister("SCITE_PROJECT_MANAGER_MESSAGES_RECEIVER", "_Messages_Recv")
+
 OnAutoItExitRegister("_OnExit")
 
 If Not @Compiled Then
 	HotKeySet("!t", "_Debug_ShowArray_TV")
 	HotKeySet("!p", "_Debug_ShowArray_Projects")
 	HotKeySet("!a", "_Debug_Show_ActifProject")
+	HotKeySet("!v", "_Debug_SciteCmd")
 EndIf
 
 While 1
@@ -247,6 +262,8 @@ Func _OnExit()
 	; Ce _Event_Close est avec $iDontSave = 1, car on a sauvegarder dans la boucle principale
 	_Event_Close(1, 1)
 	_GUI_Main($__GUI_Delete)
+	; ---
+	_MsgRelease()
 	DllClose($__User32_Dll)
 	; ---
 	; Save current Workdir

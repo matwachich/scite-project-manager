@@ -312,8 +312,8 @@ Global $GUI_Search, $__hListView
 Func _GUI_Search($iMode = $__GUI_Create)
 	Switch $iMode
 		Case $__GUI_Create
-			$GUI_Search = GUICreate(LNG("search_guiTitle"), 312, 312, -1, -1, BitOr($GUI_SS_DEFAULT_GUI, $WS_SIZEBOX, $WS_CLIPCHILDREN), -1, $GUI_Main)
-			$__hListView = _GuiCtrlListView_Create($GUI_Search, LNG("search_LVHeader"), 6, 6, 300, 300, $LVS_REPORT + $LVS_SINGLESEL + $LVS_SHOWSELALWAYS + $LVS_NOSORTHEADER)
+			$GUI_Search = GUICreate(LNG("search_guiTitle"), 300, 300, -1, -1, BitOr($GUI_SS_DEFAULT_GUI, $WS_SIZEBOX, $WS_CLIPCHILDREN), -1, $GUI_Main)
+			$__hListView = _GuiCtrlListView_Create($GUI_Search, LNG("search_LVHeader"), 0, 0, 300, 300, $LVS_REPORT + $LVS_SINGLESEL + $LVS_SHOWSELALWAYS + $LVS_NOSORTHEADER)
 				_GUICtrlListView_SetExtendedListViewStyle($__hListView, $LVS_EX_FULLROWSELECT + $LVS_EX_GRIDLINES)
 			; ---
 			Local $pos = WinGetPos("[Class:SciTEWindow]")

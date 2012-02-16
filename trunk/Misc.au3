@@ -20,6 +20,16 @@ Func _CmdLine_Parse()
 	Next
 EndFunc
 
+Func _Messages_Recv($sMsg)
+	MsgBox(0, "DEBUG", "Massage:" & @CRLF & $sMsg)
+	$sMsg = StringSplit($sMsg, "|")
+	Switch $sMsg[1]
+		Case "open"
+			_LoadWorkspace($sMsg[2])
+			_LoadProject($sMsg[2])
+	EndSwitch
+EndFunc
+
 ; ##############################################################
 
 Func _FirstLaunch()
@@ -131,13 +141,12 @@ Func _Last_Existes($sPath)
 	Return 0
 EndFunc
 
-Func _Last_Del($sPath) ; marche pas!
-	ConsoleWrite("Last Del:" & $sPath & @CRLF)
+Func _Last_Del($sPath)
 	Local $read = CFG("last_projects")
 	$read = StringReplace($read, "|" & $sPath, "")
-	_AutoCfg_SetEntry("last_workspaces", $read)
+	_AutoCfg_SetEntry("last_projects", $read)
 	; ---
-	Local $read = CFG("last_projects")
+	Local $read = CFG("last_workspaces")
 	$read = StringReplace($read, "|" & $sPath, "")
 	_AutoCfg_SetEntry("last_workspaces", $read)
 EndFunc
@@ -255,9 +264,11 @@ Func _File_GetExt($s)
 	Return StringTrimLeft($s, StringInStr($s, ".", 1, -1))
 EndFunc
 
-Func _File_Create($sPath)
+Func _File_Create($sPath, $iOverwrite = 0)
+	If FileExists($sPath) And Not $iOverwrite Then Return
+	; ---
 	If _File_GetExt($sPath) = "au3" And FileExists(@WindowsDir & "\shellnew\template.au3") Then
-		FileCopy(@WindowsDir & "\shellnew\template.au3", $sPath)
+		FileCopy(@WindowsDir & "\shellnew\template.au3", $sPath, 8)
 	Else
 		FileClose(FileOpen($sPath, 10))
 	EndIf
@@ -290,55 +301,9 @@ Func _Debug_Show_ActifProject()
 	ConsoleWrite("!!! DEBUG: $__ActifProject = " & $__ActifProject & @CRLF)
 EndFunc
 
-; ##############################################################
-; voir:
-;	- http://msdn.microsoft.com/en-us/library/windows/desktop/bb773785(v=vs.85).aspx
-;	- http://msdn.microsoft.com/en-us/library/windows/desktop/bb773462(v=vs.85).aspx
-;	- http://msdn.microsoft.com/en-us/library/windows/desktop/bb773456(v=vs.85).aspx
-
-; doit prendre un Item Root (projet ou dossier)
-Func _Project_Sort($iProjectID)
-	Local $hItem = __OpenProject_GetItemHandle($iProjectID)
-	If Not $hItem Then Return
+Func _Debug_SciteCmd()
+	Local $in = InputBox("Debug", "Send Command to SciTE")
+	If Not $in Or @error Then Return
 	; ---
-	; d'abord ça, pour organiser selon les textes des Items (car je n'ai pas stocké le texte dans $__TV_Assoc ! :S )
-	_SendMessage($__hTree, $TVM_SORTCHILDREN, 1, $hItem, 0, "wparam", "handle")
-	; ---
-	; Le reste, c'est juste pour remettre les dossiers en haut
-	Local $tagTVSORTCB = "HWND hParent;Long PFNTVCOMPARE;Long lParam"
-	Local $sTVSORTCB = DllStructCreate($tagTVSORTCB)
-	; ---
-	Local $callback = DllCallbackRegister("__Sort_Callback", "int", "LPARAM;LPARAM;LPARAM")
-	; ---
-	DllStructSetData($sTVSORTCB, "hParent", $hItem)
-	DllStructSetData($sTVSORTCB, "PFNTVCOMPARE", DllCallbackGetPtr($callback))
-	DllStructSetData($sTVSORTCB, "lParam", 0)
-	; ---
-	_SendMessage($__hTree, $TVM_SORTCHILDRENCB, 0, DllStructGetPtr($sTVSORTCB), 0, "int", "int", "BOOL")
-	;ConsoleWrite("_SendMessage: " & @error & @CRLF)
-	; ---
-	DllCallbackFree($callback)
-EndFunc
-
-; The lParam1 and lParam2 parameters correspond to the lParam member of the TVITEM structure for the two items being compared
-; ce qui correspond à _GuiCtrlTreeView_SetItemParam !
-Func __Sort_Callback($lParam1, $lParam2, $lParamSort)
-	;ConsoleWrite("__Sort_Callback" & @CRLF)
-	;ConsoleWrite(@TAB & "lParam1: " & $lParam1 & " = " & $__TV_Assoc[$lParam1][1] & @CRLF)
-	;ConsoleWrite(@TAB & "lParam2: " & $lParam2 & " = " & $__TV_Assoc[$lParam2][1] & @CRLF)
-	;ConsoleWrite(@TAB & "lParamSort: " & $lParamSort & @CRLF)
-	; ---
-	Local $Info1 = StringSplit($__TV_Assoc[$lParam1][1], "|")
-	Local $Info2 = StringSplit($__TV_Assoc[$lParam2][1], "|")
-	; ---
-	Select
-		Case $Info1[1] = "FILE" And $Info2[1] = "FILE"
-			Return 0
-		Case $Info1[1] = "FOLDER" And $Info2[1] = "FILE"
-			_SendMessage($__hTree, $TVM_SORTCHILDREN, 1, $__TV_Assoc[$lParam1][0], 0, "wparam", "handle")
-			Return -1
-		Case $Info1[1] = "FILE" And $Info2[1] = "FOLDER"
-			_SendMessage($__hTree, $TVM_SORTCHILDREN, 1, $__TV_Assoc[$lParam2][0], 0, "wparam", "handle")
-			Return 1
-	EndSelect
+	SendSciTE_Command($in, 1)
 EndFunc
