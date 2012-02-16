@@ -13,10 +13,10 @@
 
 Global $oLangDic = _SD_Create()
 
-;_Lang_Load()
+;__Lang_LoadDefault()
 ;_SD_ToIni($oLangDic, @ScriptDir & "\Lang\English.lng", "SPM_Language")
 
-Func _Lang_Load()
+Func _Lang_Load($iJustCreateFile = 0)
 	Local $iNotifLangChange = 0
 	If Not FileExists(@ScriptDir & "\first_launch") Then
 		Switch @OSLang
@@ -31,11 +31,7 @@ Func _Lang_Load()
 	Local $sFilePath = @ScriptDir & "\lang\" & CFG("lang_file")
 	If FileExists($sFilePath) And CFG("lang_file") <> "English.lng" Then _SD_FromIni($oLangDic, $sFilePath, "SPM_Language")
 	; ---
-	Local $list = _SD_List(-1)
-	_ArrayDisplay($list)
 	__Lang_LoadDefault()
-	Local $list = _SD_List(-1)
-	_ArrayDisplay($list)
 	; ---
 	If $iNotifLangChange Then MsgBox(64, LNG("progName"), LNG("first_langSet", StringLeft(CFG("lang_file"), StringInStr(CFG("lang_file"), ".", 1, -1) - 1)))
 EndFunc
@@ -88,7 +84,7 @@ Func __Lang_LoadDefault()
 	__LNG_Add("cfg_minToTray",			"Minimize to Tray")
 	__LNG_Add("cfg_workdirOnActivate",	"Update working directory on project activation")
 	__LNG_Add("cfg_assoc",				"Associate *.auproj and *.auwork with SPM")
-	__LNG_Add("cfg_mb_lngChange",		"The language will change after program restart")
+	__LNG_Add("cfg_mb_lngChange",		"Do you want to restart SPM now to validate the language change?")
 	; ---
 	; Search
 	__LNG_Add("search_guiTitle",	"Search Result")
@@ -133,6 +129,7 @@ Func __Lang_LoadDefault()
 	__LNG_Add("about", "Scite Project Manager - by Matwachich (2012)\r\nThe Project Manager for AutoIt3\r\n\r\n" & _
 						"Thanks to:\r\nZDS - Parsing an xml file\r\nTlem - Fixing GUI Size\r\n" & _
 						"Mat - Contextual Menu in a TreeView Control\r\n" & _
+						"Yashied - Messages UDF\r\n" & _
 						"The AutoIt Creators and the entire french and english AutoIt Community!")
 	__LNG_Add("about_tip_title", "Project's page (Google Code)")
 	__LNG_Add("about_tip_com", "The AutoIt Website")
@@ -144,20 +141,22 @@ EndFunc
 ; ---
 
 Func LNG($sID, $var1 = "", $var2 = "", $var3 = "", $var4 = "", $var5 = "")
-	Local $ret
+	Local $ret = _SD_Get($oLangDic, StringLower($sID))
+	If @error Then Return "_Lang_Error_: " & $sID
+	; ---
 	Switch @NumParams
 		Case 2
-			$ret = StringFormat(_SD_Get($oLangDic, StringLower($sID)), $var1)
+			$ret = StringFormat($ret, $var1)
 		Case 3
-			$ret = StringFormat(_SD_Get($oLangDic, StringLower($sID)), $var1, $var2)
+			$ret = StringFormat($ret, $var1, $var2)
 		Case 4
-			$ret = StringFormat(_SD_Get($oLangDic, StringLower($sID)), $var1, $var2, $var3)
+			$ret = StringFormat($ret, $var1, $var2, $var3)
 		Case 5
-			$ret = StringFormat(_SD_Get($oLangDic, StringLower($sID)), $var1, $var2, $var3, $var4)
+			$ret = StringFormat($ret, $var1, $var2, $var3, $var4)
 		Case 6
-			$ret = StringFormat(_SD_Get($oLangDic, StringLower($sID)), $var1, $var2, $var3, $var4, $var5)
+			$ret = StringFormat($ret, $var1, $var2, $var3, $var4, $var5)
 		Case Else
-			$ret = StringFormat(_SD_Get($oLangDic, StringLower($sID)))
+			$ret = StringFormat($ret)
 	EndSwitch
 	; ---
 	Return $ret

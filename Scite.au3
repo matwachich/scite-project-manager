@@ -43,7 +43,6 @@ EndFunc
 
 Func _Scite_OpenFile($sPath)
 	SendSciTE_Command('open:' & StringStripWS(StringReplace($sPath, "\", "\\"), 3))
-	;ConsoleWrite("Answer: " & _Scite_WaitAnswer() & " - Err: " & @error & @CRLF)
 EndFunc
 
 ; ##############################################################
@@ -70,15 +69,15 @@ Func SendSciTE_Command($sCmd, $iAnswer = 0)
 		'Ptr', DllStructGetPtr($COPYDATA))
 	; ---
 	If $iAnswer Then _
-		Return SetError(@error, @extended, _Scite_WaitAnswer(500))
+		Return SetError(@error, @extended, _Scite_WaitAnswer())
 EndFunc   ;==>SendSciTE_Command
 ; ---
 
 Func _Scite_WaitAnswer($iTimeOut = 1000) ; 1000 ms
 	Local $timer = TimerInit()
-	While Not $__SciTE_LastAnswer
+	Do
 		If TimerDiff($timer) >= $iTimeOut Then Return SetError(1, 0, "")
-	WEnd
+	Until $__SciTE_LastAnswer <> ""
 	Local $ret = $__SciTE_LastAnswer
 	$__SciTE_LastAnswer = ""
 	Return $ret
@@ -92,16 +91,13 @@ Func MY_WM_COPYDATA($hWnd, $msg, $wParam, $lParam)
 	Local $CmdStruct = DllStructCreate('Char[' & $SciTECmdLen + 1 & ']', DllStructGetData($COPYDATA, 3))
 	$SciTECmd = StringLeft(DllStructGetData($CmdStruct, 1), $SciTECmdLen)
 	$SciTECmd = StringTrimLeft($SciTECmd, StringInStr($SciTECmd, ":", 0, 1, 2))
-	;ConsoleWrite("Recv: " & $SciTECmd & @CRLF)
+	ConsoleWrite("Recv: " & $SciTECmd & @CRLF)
 	$__SciTE_LastAnswer = $SciTECmd
 EndFunc   ;==>MY_WM_COPYDATA
 
 ; ##############################################################
 
 Func _Scite_Maximize()
-	;WinSetState("[Class:SciTEWindow]", "", @SW_MAXIMIZE)
-	;_ArrayDisplay($__SciTE_OldPos)
-	; ---
 	If CFG("adapt_scite") = $GUI_UNCHECKED Then Return
 	; ---
 	; If the SciTE win is minimized, dont maximize it
@@ -112,10 +108,6 @@ Func _Scite_Maximize()
 EndFunc
 
 Func _Scite_Adapt($iOnlyResize = 0)
-	;Local $pos = WinGetPos("[Class:SciTEWindow]")
-	;If IsArray($pos) Then _
-	;	$__SciTE_OldPos = $pos
-	; ---
 	If CFG("adapt_scite") = $GUI_UNCHECKED Then Return
 	; ---
 	; cette variable est mise à 1 dans WM_SIZE
@@ -123,10 +115,6 @@ Func _Scite_Adapt($iOnlyResize = 0)
 	; ---
 	$pos = WinGetPos($GUI_Main)
 	WinMove("[Class:SciTEWindow]", "", $pos[2], 0, @DesktopWidth - $pos[2], @DesktopHeight - _TaskBar_GetHeight())
-	; ---
-	;WinSetState("[Class:SciTEWindow]", "", @SW_MINIMIZE)
-	;WinActivate($GUI_Main)
-	;WinActivate("[Class:SciTEWindow]")
 EndFunc
 
 ; ##############################################################

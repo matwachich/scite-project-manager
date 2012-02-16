@@ -12,6 +12,7 @@
 		<File path="lib\AutoConfig.au3"></File>
 		<File path="lib\FileAssoc.au3"></File>
 		<File path="lib\GUIMinMax.au3"></File>
+		<File path="lib\Messages.au3"></File>
 		<File path="lib\ScriptingDictionary.au3"></File>
 	</Folder>
 	<File path="Config.au3"></File>

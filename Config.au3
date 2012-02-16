@@ -19,6 +19,8 @@ Func _Cfg_Load()
 	Else
 		Local $str = "English"
 		For $i = 1 To $list[0]
+			If $list[$i] = "English.lng" Then ContinueLoop
+			; ---
 			$str &= "|" & StringLeft($list[$i], StringInStr($list[$i], ".", 1, -1) - 1)
 		Next
 		GuiCtrlSetData($C_Lang, $str, StringLeft(CFG("lang_file"), StringInStr(CFG("lang_file"), ".", 1, -1) - 1))
@@ -51,12 +53,15 @@ Func _Cfg_Load()
 EndFunc
 
 Func _Cfg_Save()
+	Local $iRestart = 0
 	; ---
 	; Lang
 	Local $read = GuiCtrlRead($C_Lang)
 	If Not $read Then $read = "English"
 	$read &= ".lng"
-	If $read <> CFG("lang_file") Then MsgBox(64, LNG("ProgName"), LNG("cfg_mb_lngChange"))
+	If $read <> CFG("lang_file") Then
+		If _Ask(LNG("cfg_mb_lngChange")) Then $iRestart = 1
+	EndIf
 	_AutoCfg_SetEntry("lang_file", $read)
 	; ---
 	; Max History
@@ -73,9 +78,8 @@ Func _Cfg_Save()
 	; ---
 	; Adapt SciTE
 	$read = GuiCtrlRead($C_AdaptScite)
-	If $read = $GUI_CHECKED Then _Scite_Adapt()
-	; ---
 	_AutoCfg_SetEntry("adapt_scite", $read)
+	If $read = $GUI_CHECKED Then _Scite_Adapt()
 	; ---
 	; Minimize to Tray
 	_AutoCfg_SetEntry("minToTray", GuiCtrlRead($C_MinToTray))
@@ -92,6 +96,26 @@ Func _Cfg_Save()
 				__Associate(0)
 		EndSwitch
 	EndIf
+	; ---
+	; Restart
+	If $iRestart Then _Restart()
+EndFunc
+
+Func _Restart()
+	If Not _Project_SaveAll() Then Return
+	; ---
+	Local $cmd = ""
+	For $i = 1 To $__OpenedProjects[0][0]
+		$cmd &= '"' & $__OpenedProjects[$i][1] & '" '
+	Next
+	$cmd = StringTrimRight($cmd, 1)
+	$cmd = '"' & @ScriptFullPath & '" ' & $cmd & " /restart"
+	; ---
+	If $__RunFromScite Then $cmd &= " /fromScite"
+	; ---
+	Run(@ComSpec & ' /c ' & $cmd, @SystemDir, @SW_HIDE)
+	; ---
+	Exit
 EndFunc
 
 ; ##############################################################
