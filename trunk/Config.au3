@@ -33,6 +33,9 @@ Func _Cfg_Load()
 	GuiCtrlSetState($C_RenameConfirmation, CFG("rename_askConfirmation"))
 	GuiCtrlSetState($C_RenameBackup, CFG("rename_backupFile"))
 	; ---
+	; Open Added Files
+	GuiCtrlSetState($C_OpenAddedFiles, CFG("OpenAddedFiles"))
+	; ---
 	; SciTE Adapt
 	GuiCtrlSetState($C_AdaptScite, CFG("adapt_scite"))
 	; ---
@@ -75,6 +78,9 @@ Func _Cfg_Save()
 	; Rename Confirmation & Backup
 	_AutoCfg_SetEntry("rename_askConfirmation", GuiCtrlRead($C_RenameConfirmation))
 	_AutoCfg_SetEntry("rename_backupFile", GuiCtrlRead($C_RenameBackup))
+	; ---
+	; Open Added Files
+	_AutoCfg_SetEntry("OpenAddedFiles", GuiCtrlRead($C_OpenAddedFiles))
 	; ---
 	; Adapt SciTE
 	$read = GuiCtrlRead($C_AdaptScite)

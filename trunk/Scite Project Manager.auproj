@@ -6,6 +6,12 @@
 		<File path="txt\SciTE_Cmd.txt"></File>
 		<File path="txt\ToDo.txt"></File>
 	</Folder>
+	<Folder name="Koda" exp="False">
+		<File path="koda\GUI_Cfg.kxf"></File>
+		<File path="koda\GUI_Main.kxf"></File>
+		<File path="koda\GUI_NewPrj.kxf"></File>
+		<File path="koda\GUI_Templates.kxf"></File>
+	</Folder>
 	<Folder name="Lang" exp="True">
 		<File path="Lang\Francais.lng"></File>
 	</Folder>
@@ -25,5 +31,6 @@
 	<File path="Scite.au3"></File>
 	<File path="Search.au3"></File>
 	<File path="SPM.au3"></File>
+	<File path="Templates.au3"></File>
 	<File path="TreeView.au3"></File>
 </Project>

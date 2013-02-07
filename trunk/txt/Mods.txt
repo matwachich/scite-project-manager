@@ -1,0 +1,77 @@
+- Close all
+- Delete (File & Folder)
+- 8 Premiers Accelerators
+- La position des Items Projet et Dossier (expand/collaps) est sauvgardé dans le fichier de projet
+	(attribut exp) PS: n'interfère pas avec Programmer's Notepad
+- Un Fichier prend le chemin relatif par rapport au répertoire du projet
+- Un dossier ajouté se met en haut de la liste (au dessus des fichiers, en dessous des autres dossiers)
+- Début de fonctionnalitées Drag & Drop Items (à finir)
+Bugs:
+- * de modified enregistré
+- But quand on enregistre un FOLDER vide et qu'il est concidéré comme un FILE
+- Si on enregistre avec Projet - Collapsed et un Folder - Expanded, alors à l'ouverture, le projet est Expanded!
+=== REV: 7 ===
+
+- Gestion des ProjectID amélioré (plus de décalage dans le Array)
+- Gestion des ItemAssocInfo amélioré, et corrigé
+- __SetActiveProject simplifiée et améliorée
+- Drag & Drop des items (files) dans le projet
+- GUI Resizable & Limited
+- Icones! (mais trou moche!)
+=== REV: 8 ===
+
+- Icones OK!!!
+- Bouton Annuler lors de la demande de sauvegarde
+- OK: problème du clique sur les TVItems qui actionne des Events d'autres contrôles
+	(Utilisation de _GuiCtrlTreeView_Create au lieu de GuiCtrlCreateTreeView)
+- Historique derniers Projets et Workspaces
+=== REV: 9 ===
+
+- TreeView Context Menu OK et fonctionnel (sauf Renommer)
+- Le dernier workingDir est enregistré à la fermeture
+- Bug Report Menu
+- Options OK
+- Associations OK
+- Renommage des Items (Projet, Dossier, Fichier: avec confirmation & backup)
+=== REV: 10 ===
+
+- Renomage des projets corrigé
+- Association avec SciTE (OK - Béta) (Resize, Minimize To Tray)
+- Se souvient de la taille de la fenêtre
+- Ouverture de fichiers
+- Traduction FR (à faire vérifier)
+=== REV: 11 ===
+
+- Petite correction dans la traduction FR
+- _Project_Sort!!! :D
+=== REV: 12 (Beta 1 - 1.0.0.0) ===
+
+- First launch (recherch AutoIt3, demande association de fichiers)
+- Quand un item est renommer, si le nom est identique à l'ancien, on ne fait pas _SetModified
+- Un fichier est maintenant correctement renomer (change d'icône, change de place selon ordre alphabétique)
+- Quand on minimize SPM alors que SciTE est minimisé aussi, ce dernier n'est plus maximisé
+- Les fichiers sont maintenant ouverts grâce à "DirectorExtension" (command direct à SciTE)
+=== REV: 13 ===
+
+- Ajouté à first launch: SciTE Window Adapt
+- La langue est sélectionné selon la langue du système (au premier lancement uniquement)
+- Config: Checkbox - adapt Scite window (ON/OFF)
+- Recherche OK
+- L'extension .lng n'est plus affichées dans la sélection de la langue
+- Ajouté: option pour mettre à jour workdir lors de l'activation d'un projet
+=== REV: 14 ===
+
+- Fichier qui n'existe pas dans l'historique est supprimé
+- Tous les fichiers s'ouvrent dans une même instance
+=== REV: 15 (Beta 2 - 1.2.0.0) ===
+
+- Corrigé bug fichier Template.auproj
+- Corrigé bug création fichier au mauvais répertoire
+=== REV: 15 (Beta 2 - 1.2.0.1)
+
+- Ajouter: Ouvrir dans programme par défaut
+- Ajouter: Lancer le script
+- Ajouter: icone pour fichier kxf (Koda)
+- Le MsgBox de réception de message ne s'affiche plus! (oublié!)
+- Titre de la fenêtre principale changé
+- Les fichiers ajoutés sont ouvert (Desactivable dans les options)

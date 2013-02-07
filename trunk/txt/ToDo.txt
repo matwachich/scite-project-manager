@@ -1,0 +1,68 @@
+
+- Affiner les mécanismes dans l'ensemble
+- Drag & Drop sur le TreeView
+- Ouvrir et refermer fichier renommé (problème: recoit pas les messages de SciTE)
+- Quand on redémare pour changer de langue, ne pas demander si on veut fermer SciTE
+- Quand on ouvre un fichier, SciTE doit être activer
+
+- Pourquoi quand j'ouvre un projet, il est modified???
+- Assistant création de projet
+	Fenêtre unique
+	Sélectionner Dossier
+	Donner un nom -> nom du fichier du projet
+	Entrer des noms de dossiers à créer dans le dossier
+	Ajouter un fichier principal (séléctionner template)
+
+- Files templates (dossier contenant les templates, tout simplement)
+
+- Add folder's files
+- Vérifier Drag & Drop (Marche)
+
+- Racourcis vers des commandes personnalisées (type: doc SQLite...)
+- Ouvrir répertoire AutoIt
+
+
+== Done ==
+- Accelerators
+- Ajouter dossier
+- Supprimer fichier/dossier
+- Ajouter indication ouvert/fermer pour les Item avec Enfants (dossier, projet) dans le fichier du projet
+- Voir si le chemin d'un fichier est en dehors du répertoire du projet (_PathGetRelative)
+- !!! Pourquoi __SetActifProjet n'est pas appelé quand on ferme un projet???
+- Fixer taille GUI
+- Drag & Drop des Items dans les dossiers
+- Save Workspace
+- Des icones! (New, Open, Save, AddFile, AddFolder, Delete) (demander à la communauté des plus jolies!)
+- Attention! interaction entre les CtrlID des TreeViewItems et les CtrlID des menu et boutons! d'ou le comportement bizar
+	(quand on clique sur un TreeViewItem, des action sont lancées)
+	(Utilisation de _GuiCtrlTreeView_Create au lieu de GuiCtrlCreateTreeView)
+- Cancel pour la fermeture
+- Historique des derniers projets
+- Les icones en ressources +++
+- Menu contextuel pour le TreeView
+- Click droit sur projet => Projet actif (pour le menu contextuel)
+- CommandLine (OK) et Association de fichier
+- Page de configuration (selection langue, nombre max dans historique, association de fichier)
+- Renommer les fichiers (proposer de modifier le nom sur le disque aussi), dossiers, et projets !!!
+- Si un fichier n'existe pas! il faut le notifier
+- Double clique => ouverture fichier
+- Association avec SciTE
+- Traduction FR
+- Trie des TreeViewItems (dossiers d'abords, alphabétique)
+- Adapter à AutoIt Portable (page first launch)
+- Si un Item n'a pas été renommer, alors ne pas _setModified
+- Checkbox pour empécher des toucher fenêtre de SciTE
+- Rechercher dans les fichiers +++
+- Enlever extension de fichier dans la liste des langues
+- Adapter la langue à la langue de Windows (@OSLang)
+- Technique de Jos (SciteCommand) !!! Bigre!
+- Quand on active un projet, le WorkDir est mis à jour
+- Enlever _Sort de _TV_Add (lourd!)
+- Revoir _Sort: si j'ai le handle, j'ai le texte, et je n'ai plus besoin de _GCTV_Sort()
+- Recherche
+- Notification qu'un fichier n'existe pas dans l'historique
+- Ouvrir les projets dans l'instance active
+- Erreur Lang
+- context menu: Run
+- Change titre fenêtre principale
+=== 1.2.0.1 ===

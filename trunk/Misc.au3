@@ -21,7 +21,7 @@ Func _CmdLine_Parse()
 EndFunc
 
 Func _Messages_Recv($sMsg)
-	MsgBox(0, "DEBUG", "Massage:" & @CRLF & $sMsg)
+	;MsgBox(0, "DEBUG", "Massage:" & @CRLF & $sMsg)
 	$sMsg = StringSplit($sMsg, "|")
 	Switch $sMsg[1]
 		Case "open"

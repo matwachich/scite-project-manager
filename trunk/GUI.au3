@@ -9,6 +9,9 @@
 #ce ----------------------------------------------------------------------------
 #Include-Once
 
+#include <ButtonConstants.au3>
+#include <EditConstants.au3>
+#include <ListViewConstants.au3>
 #include <GUIConstantsEx.au3>
 #include <TreeViewConstants.au3>
 #include <WindowsConstants.au3>
@@ -48,13 +51,13 @@ Global $Menu_Misc, _
 			$Menu_RunScite, $Menu_Cfg, $Menu_Bug, $Menu_About
 ; ---
 Global $CMenu_Dummy, $CMenu, $hCMenu, _
-			$CMenu_OpenAll, $CMenu_AddFile, $CMenu_AddFolder, $CMenu_Delete, $CMenu_Close, $CMenu_Rename, $CMenu_Browse
+			$CMenu_Run, $CMenu_OpenAll, $CMenu_AddFile, $CMenu_AddFolder, $CMenu_Delete, $CMenu_Close, $CMenu_Rename, $CMenu_Browse, $CMenu_ShellExec
 
 Func _GUI_Main($flag = $__GUI_CREATE)
 	Switch $flag
 		Case $__GUI_CREATE
 			#Region ### START Koda GUI section ### Form=GUI_Main.kxf
-			$GUI_Main = GUICreate("SPM", 300, 400, 0, 0, BitOr($GUI_SS_DEFAULT_GUI, $WS_SIZEBOX, $WS_CLIPCHILDREN), $WS_EX_ACCEPTFILES)
+			$GUI_Main = GUICreate("Project Manager", 300, 400, 0, 0, BitOr($GUI_SS_DEFAULT_GUI, $WS_SIZEBOX, $WS_CLIPCHILDREN), $WS_EX_ACCEPTFILES)
 			$GUI_Main_Dec = Dec(StringRight($GUI_Main, 8))
 			; ---
 			; ça, c'est pour faire avancer le compteur des CtrlID, pour qu'il n'y ait plus d'interférences
@@ -76,6 +79,7 @@ Func _GUI_Main($flag = $__GUI_CREATE)
 			; GUI Menu
 			$Menu_File = GUICtrlCreateMenu(LNG("Menu_File"))
 				$Menu_New = GUICtrlCreateMenuItem(LNG("Menu_New"), $Menu_File)
+				$Menu_NewAssistant = GUICtrlCreateMenuItem(LNG("Menu_NewAssistant"), $Menu_File)
 				$Menu_Open = GUICtrlCreateMenuItem(LNG("Menu_Open"), $Menu_File)
 					GuiCtrlCreateMenuItem("", $Menu_File)
 				$Menu_Save = GUICtrlCreateMenuItem(LNG("Menu_Save"), $Menu_File)
@@ -116,6 +120,7 @@ Func _GUI_Main($flag = $__GUI_CREATE)
 			$CMenu = GuiCtrlCreateContextMenu($CMenu_Dummy)
 				$CMenu_Close = GuiCtrlCreateMenuItem(LNG("CMenu_Close"), $CMenu)
 					GuiCtrlCreateMenuItem("", $CMenu)
+				$CMenu_Run = GuiCtrlCreateMenuItem(LNG("CMenu_Run"), $CMenu)
 				$CMenu_OpenAll = GuiCtrlCreateMenuItem(LNG("CMenu_OpenAll"), $CMenu)
 					GuiCtrlCreateMenuItem("", $CMenu)
 				$CMenu_AddFile = GuiCtrlCreateMenuItem(LNG("Menu_AddFile"), $CMenu)
@@ -124,6 +129,7 @@ Func _GUI_Main($flag = $__GUI_CREATE)
 				$CMenu_Delete = GuiCtrlCreateMenuItem(LNG("Menu_Delete"), $CMenu)
 					GuiCtrlCreateMenuItem("", $CMenu)
 				$CMenu_Browse = GuiCtrlCreateMenuItem(LNG("CMenu_Browse"), $CMenu)
+				$CMenu_ShellExec = GuiCtrlCreateMenuItem(LNG("CMenu_ShellExec"), $CMenu)
 			; ---
 			$hCMenu = GuiCtrlGetHandle($CMenu)
 			; ---
@@ -146,13 +152,15 @@ Func _GUI_Main($flag = $__GUI_CREATE)
 				_GuiImageList_AddIcon($__hTreeView_ImageList, $__ResDir & "\ico_txt.ico")
 				_GuiImageList_AddIcon($__hTreeView_ImageList, $__ResDir & "\ico_ini.ico")
 				_GuiImageList_AddIcon($__hTreeView_ImageList, $__ResDir & "\ico_blank.ico")
+				_GuiImageList_AddIcon($__hTreeView_ImageList, $__ResDir & "\ico_kxf.ico")
 			Else
-				_GuiImageList_AddIcon($__hTreeView_ImageList, @ScriptFullPath, 4)
-				_GuiImageList_AddIcon($__hTreeView_ImageList, @ScriptFullPath, 5)
-				_GuiImageList_AddIcon($__hTreeView_ImageList, @ScriptFullPath, 6)
-				_GuiImageList_AddIcon($__hTreeView_ImageList, @ScriptFullPath, 7)
-				_GuiImageList_AddIcon($__hTreeView_ImageList, @ScriptFullPath, 8)
-				_GuiImageList_AddIcon($__hTreeView_ImageList, @ScriptFullPath, 9)
+				_GuiImageList_AddIcon($__hTreeView_ImageList, @ScriptFullPath, 4) ; res\ico_project.ico
+				_GuiImageList_AddIcon($__hTreeView_ImageList, @ScriptFullPath, 5) ; res\ico_folder.ico
+				_GuiImageList_AddIcon($__hTreeView_ImageList, @ScriptFullPath, 6) ; res\ico_au3.ico
+				_GuiImageList_AddIcon($__hTreeView_ImageList, @ScriptFullPath, 7) ; res\ico_txt.ico
+				_GuiImageList_AddIcon($__hTreeView_ImageList, @ScriptFullPath, 8) ; res\ico_ini.ico
+				_GuiImageList_AddIcon($__hTreeView_ImageList, @ScriptFullPath, 9) ; res\ico_blank.ico
+				_GuiImageList_AddIcon($__hTreeView_ImageList, @ScriptFullPath, 17) ; res\ico_kxf.ico
 			EndIf
 			_GuiCtrlTreeView_SetNormalImageList($__hTree, $__hTreeView_ImageList)
 			; ---
@@ -166,12 +174,12 @@ Func _GUI_Main($flag = $__GUI_CREATE)
 				_GuiImageList_AddIcon($__hToolBar_ImageList, $__ResDir & "\btn\btn_newFolder.ico", 0, 1)
 				_GuiImageList_AddIcon($__hToolBar_ImageList, $__ResDir & "\btn\btn_delete.ico", 0, 1)
 			Else
-				_GuiImageList_AddIcon($__hToolBar_ImageList, @ScriptFullPath, 10, 1)
-				_GuiImageList_AddIcon($__hToolBar_ImageList, @ScriptFullPath, 11, 1)
-				_GuiImageList_AddIcon($__hToolBar_ImageList, @ScriptFullPath, 12, 1)
-				_GuiImageList_AddIcon($__hToolBar_ImageList, @ScriptFullPath, 13, 1)
-				_GuiImageList_AddIcon($__hToolBar_ImageList, @ScriptFullPath, 14, 1)
-				_GuiImageList_AddIcon($__hToolBar_ImageList, @ScriptFullPath, 15, 1)
+				_GuiImageList_AddIcon($__hToolBar_ImageList, @ScriptFullPath, 10, 1) ; res\btn\btn_newProject.ico
+				_GuiImageList_AddIcon($__hToolBar_ImageList, @ScriptFullPath, 11, 1) ; res\btn\btn_open.ico
+				_GuiImageList_AddIcon($__hToolBar_ImageList, @ScriptFullPath, 12, 1) ; res\btn\btn_save.ico
+				_GuiImageList_AddIcon($__hToolBar_ImageList, @ScriptFullPath, 13, 1) ; res\btn\btn_newFile.ico
+				_GuiImageList_AddIcon($__hToolBar_ImageList, @ScriptFullPath, 14, 1) ; res\btn\btn_newFolder.ico
+				_GuiImageList_AddIcon($__hToolBar_ImageList, @ScriptFullPath, 15, 1) ; res\btn\btn_delete.ico
 			EndIf
 			_GuiCtrlToolBar_SetImageList($__hToolBar, $__hToolBar_ImageList)
 			; ---
@@ -271,13 +279,13 @@ EndFunc
 ; ##############################################################
 ; Cfg GUI
 Global $GUI_Cfg, $C_Lang, $I_MaxHistory, $ud_MaxHistory, $C_Assoc, $C_RenameConfirmation, $C_RenameBackup, $C_MinToTray, $C_AdaptScite, $B_Ok
-Global $C_WorkdirOnActivate
+Global $C_WorkdirOnActivate, $C_OpenAddedFiles
 
 Func _GUI_Cfg($flag = $__GUI_CREATE)
 	Switch $flag
 		Case $__GUI_CREATE
 			#Region ### START Koda GUI section ### Form=GUI_Cfg.kxf
-			$GUI_Cfg = GUICreate(LNG("cfg_title"), 255, 268, -1, -1, -1, -1, $GUI_Main)
+			$GUI_Cfg = GUICreate(LNG("cfg_title"), 262, 292, -1, -1, -1, -1, $GUI_Main)
 			GUICtrlCreateLabel(LNG("cfg_lng"), 18, 18, 58, 17)
 			GUICtrlCreateLabel(LNG("cfg_hist_1"), 18, 48, 213, 17)
 			GUICtrlCreateLabel(LNG("cfg_hist_2"), 18, 69, 115, 17)
@@ -287,12 +295,13 @@ Func _GUI_Cfg($flag = $__GUI_CREATE)
 				GuiCtrlSetLimit($ud_MaxHistory, 15, 0)
 			$C_RenameConfirmation = GUICtrlCreateCheckbox(LNG("cfg_renameAsk"), 15, 102, 240, 17)
 			$C_RenameBackup = GUICtrlCreateCheckbox(LNG("cfg_renameBack"), 15, 120, 240, 17)
-			$C_AdaptScite = GUICtrlCreateCheckbox(LNG("cfg_adaptScite"), 15, 144, 240, 17)
-			$C_MinToTray = GUICtrlCreateCheckbox(LNG("cfg_minToTray"), 15, 162, 240, 17)
-			$C_WorkdirOnActivate = GUICtrlCreateCheckbox(LNG("cfg_workdirOnActivate"), 15, 180, 240, 17)
-			$C_Assoc = GUICtrlCreateCheckbox(LNG("cfg_assoc"), 15, 204, 240, 17)
+			$C_OpenAddedFiles = GUICtrlCreateCheckbox(LNG("cfg_OpenAddedFiles"), 15, 144, 240, 17)
+			$C_AdaptScite = GUICtrlCreateCheckbox(LNG("cfg_adaptScite"), 15, 168, 240, 17)
+			$C_MinToTray = GUICtrlCreateCheckbox(LNG("cfg_minToTray"), 15, 186, 240, 17)
+			$C_WorkdirOnActivate = GUICtrlCreateCheckbox(LNG("cfg_workdirOnActivate"), 15, 204, 240, 17)
+			$C_Assoc = GUICtrlCreateCheckbox(LNG("cfg_assoc"), 15, 228, 240, 17)
 				If Not @compiled Then GuiCtrlSetState($C_Assoc, $GUI_DISABLE)
-			$B_Ok = GUICtrlCreateButton("OK", 89, 234, 75, 25)
+			$B_Ok = GUICtrlCreateButton("OK", 89, 258, 75, 25)
 			#EndRegion ### END Koda GUI section ###
 		Case $__GUI_SHOW
 			GuiSetState(@SW_SHOW, $GUI_Cfg)
