@@ -20,6 +20,7 @@
 #AutoIt3Wrapper_Res_Icon_Add=res\btn\btn_newFolder.ico
 #AutoIt3Wrapper_Res_Icon_Add=res\btn\btn_delete.ico
 #AutoIt3Wrapper_Res_Icon_Add=res\project.ico
+#AutoIt3Wrapper_Res_Icon_Add=res\ico_kxf.ico
 #AutoIt3Wrapper_Run_After=copy /Y "%out%" "%scitedir%\SciteProjectManager\SPM.exe"
 #AutoIt3Wrapper_Run_After=copy /Y %scriptdir%\Lang\Francais.lng" "%scitedir%\SciteProjectManager\lang\Francais.lng"
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
@@ -68,6 +69,7 @@ _AutoCfg_Init($ACFG_INI, @ScriptDir & "\spm_config.ini", "SPM_Configuration")
 	; $GUI_CHECKED = 1, $GUI_UNCHECKED = 4
 	_AutoCfg_AddEntry("rename_askConfirmation", 1)
 	_AutoCfg_AddEntry("rename_backupFile", 1)
+	_AutoCfg_AddEntry("OpenAddedFiles", 1)
 	_AutoCfg_AddEntry("minToTray", 1)
 	_AutoCfg_AddEntry("adapt_scite", 1)
 	_AutoCfg_AddEntry("workdir_onActivate", 1)
@@ -192,6 +194,8 @@ While 1
 				; ---
 				;Case $CMenu_Close
 				;	ConsoleWrite("> CMenu_Close" & @CRLF)
+				Case $CMenu_Run
+					_Event_Run()
 				Case $CMenu_OpenAll
 					_Event_OpenAll()
 				;Case $CMenu_AddFile
@@ -204,6 +208,8 @@ While 1
 				;	ConsoleWrite("> CMenu_Delete" & @CRLF)
 				Case $CMenu_Browse
 					_Event_Browse()
+				Case $CMenu_ShellExec
+					_Event_ShellExec()
 				; ---
 				Case $GUI_EVENT_MOUSEMOVE
 					__TV_HandleDrag()

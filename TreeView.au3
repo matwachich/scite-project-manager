@@ -32,6 +32,8 @@ Func _TV_Add($sText, $sType, $hParent, $sPath = "", $iProjectID = "")
 					$iIco = 3
 				Case "ini", "cfg"
 					$iIco = 4
+				Case "kxf"
+					$iIco = 6
 				Case Else
 					$iIco = 5
 			EndSwitch

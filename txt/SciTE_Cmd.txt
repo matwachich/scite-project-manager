@@ -1,0 +1,70 @@
+#cs
+askfilename:                                Return the name of the file being edited.
+askproperty:<key>                           Return the value of a property.
+close:                                      Close the current file.
+closing:                                    Director is closing - SciTE closes if it was started by the director.
+currentmacro:<string>                       Set the current macro to name.
+cwd:                                        Change the working directory.
+enumproperties:dyn|local|user|base|embed    Enumerate all the properties in the argument set.
+exportashtml:<path>                         Save the document in HTML format as the indicated file.
+exportasrtf:<path>                          Save the document in RTF format as the indicated file.
+exportaspdf:<path>                          Save the document in PDF format as the indicated file.
+exportaslatex:<path>                        Save the document in LaTeX format as the indicated file.
+exportasxml:<path>                          Save the document in XML format as the indicated file.
+extender:<command>                          Call the extension interface with the given command.
+find:<string>                               Search for a string, select and show it.
+focus:<timeStamp>                           On GTK+ bring this SciTE window to the front. The timeStamp is from the window manager and ensures that windows are only activated because of a user command. Has no effect on Windows as applications on Windows can only donate focus, not take focus.
+goto:<lineNumber>[,<columnNumber>]          Move caret to a particular line and make it visible.
+                                            If there is a column number then select the word at that column number or move the caret there if no word is present.
+identity:<hwndDirector>                     Sets the director window handle to which SciTE sends messages. The argument is in decimal.
+insert:<value>                              Display the value in the editor pane replacing the selection.
+loadsession:<path>                          Load a session as given by the indicated file.
+macrocommand:<command>                      Execute a macro command. See the SciTE source code for the syntax of the command argument.
+macroenable:<enable>                        If enable, display menu commands in SciTE for recording and playing macros.
+macrolist:<list>                            Display a list for the user to choose from.
+menucommand:<cmd>                           Execute a menu command based on numeric ID.
+open:<path>                                 Open the indicated file.
+output:<value>                              Display the value in the output pane replacing the selection.
+property:<key>=<value>                      Set a property to a value.
+quit:                                       Shut down SciTE.
+reloadproperties:                           Reload properties from files.
+replaceall:<search>\000<replace>            Replace all instances of he search string in the document with the replace string.
+saveas:<path>                               Save the document as the indicated file.
+savesession:<path>                          Save a session as given by the indicated file.
+
+The actions sent by SciTE are:
+closed:<path>                               SciTE has closed the indicated file.
+closing:                                    SciTE is closing.
+dyn|local|user|base|embed:<key>=<value>     Set a property in a set to a value.
+filename:<path>                             The file being edited is path. This is the reply to the askfilename: command.
+identity:<hwndSciTEReceiving>               SciTE indicates to the director the window handle to which it should send messages. The argument is in decimal.
+macro:getlist                               Retrieve the list of available macros which will be returned by the macrolist command.
+macro:record:<details>                      Start recording a macro. See the SciTE source code for the syntax of the details argument.
+macro:run:<macroName>                       Run the named macro.
+macro:stoprecord                            Stop recording a macro.
+opened:<path>                               SciTE has opened the indicated file.
+switched:<path>                             SciTE has switched buffers to the indicated file.
+saved:<path>                                SciTE has saved the indicated file.
+
+PROPERTYS:
+        FilePath                            full path of the current file
+        FileDir                             directory of the current file without a trailing slash
+        FileName                            base name of the current file
+        FileExt                             extension of the current file
+        FileNameExt                         $(FileName).$(FileExt)
+        Language                            name of the lexer used for the current file
+        SessionPath                         full path of the current session
+        CurrentSelection                    value of the currently selected text
+        CurrentWord                         value of word which the caret is within or near
+        Replacements                        number of replacements made by last Replace command
+        SelectionStartColumn                column where selection starts
+        SelectionStartLine                  line where selection starts
+        SelectionEndColumn                  column where selection ends
+        SelectionEndLine                    line where selection ends
+        CurrentMessage                      most recently selected output pane message
+        SciteDefaultHome                    directory in which the Global Options file is found
+        SciteUserHome                       directory in which the User Options file is found
+        SciteDirectoryHome                  directory in which the Directory Options file is found
+        APIPath                             list of full paths of API files from api.filepattern
+        AbbrevPath                          full path of abbreviations file
+#ce

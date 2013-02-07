@@ -20,6 +20,9 @@ Func _Event_New()
 	If @error Or Not $sPath then Return
 	FileDelete($sPath)
 	; ---
+	If StringRight($sPath, 7) <> ".auproj" Then $sPath &= ".auproj"
+	FileDelete($sPath)
+	; ---
 	Local $hCtrl = _TV_Add($prjName, "PROJECT", $__hTree, $sPath, "")
 	Local $iProjectID = __OpenProject_Add($prjName, $sPath, $hCtrl, 1) ; modified = 1 (new project)
 	_TV_ItemSetInfo($hCtrl, "PROJECT|" & $iProjectID & "|" & $sPath)
@@ -150,18 +153,29 @@ Func _Event_AddFile()
 	; traitement du chemin du fichier
 	Local $projPath = _File_GetPath(__OpenProject_GetPath($Info[2]))
 	; ---
+	Local $aAddedItems[1] = [0]
+	; ---
 	For $i = 1 To $sPath[0]
 		; création du fichier avant de prendre le chemin relatif, pour éviter de la créer au mauvais endroit!
 		If Not FileExists($sPath[$i]) Then _File_Create($sPath[$i])
 		; ---
 		$sPath[$i] = _PathGetRelative($projPath, $sPath[$i])
 		; ---
-		_TV_Add(_File_GetName($sPath[$i]), "file", $hItemToAdd, $sPath[$i], $Info[2])
+		_ArrayAdd($aAddedItems, _TV_Add(_File_GetName($sPath[$i]), "file", $hItemToAdd, $sPath[$i], $Info[2]))
 		__TV_ExpandItems($hItemToAdd)
+		; ---
+		$aAddedItems[0] += 1
 	Next
 	; ---
 	_Project_Sort($Info[2])
 	__OpenProject_SetModified($Info[2], 1)
+	; ---
+	; Ouvre le fichier ajouté
+	If CFG("OpenAddedFiles") = $GUI_CHECKED Then
+		For $i = 1 To $aAddedItems[0]
+			_Event_TV_DblClick($aAddedItems[$i])
+		Next
+	EndIf
 EndFunc
 
 Func _Event_AddFolder()
@@ -218,6 +232,18 @@ EndFunc
 
 ; ##############################################################
 
+Func _Event_Run()
+	Local $item = _GuiCtrlTreeView_GetSelection($__hTree)
+	If Not $item Then Return
+	; ---
+	Local $info = _TV_ItemGetInfo($item)
+	If _File_GetExt($info[3]) = "au3" Then
+		; "$(SciteDefaultHome)\AutoIt3Wrapper\AutoIt3Wrapper.exe" /run /prod /ErrorStdOut /in "$(FilePath)"
+		Local $file = _File_GetPath(__OpenProject_GetPath($info[2])) & "\" & $info[3]
+		Run('"' & _File_GetPath(CFG("scite_dir")) & '\AutoIt3Wrapper\AutoIt3Wrapper.exe" /run /prod /ErrorStdOut /in "' & $file & '"')
+	EndIf
+EndFunc
+
 Func _Event_OpenAll()
 	Local $item = _GuiCtrlTreeView_GetSelection($__hTree)
 	If Not $item Then Return
@@ -256,6 +282,17 @@ Func _Event_Browse()
 	EndSwitch
 EndFunc
 
+Func _Event_ShellExec()
+	Local $item = _GuiCtrlTreeView_GetSelection($__hTree)
+	If Not $item Then Return
+	; ---
+	Local $info = _TV_ItemGetInfo($item), $path
+	Switch $info[1]
+		Case "FILE"
+			ShellExecute($Info[3])
+	EndSwitch
+EndFunc
+
 ; ##############################################################
 
 ; open file in SciTE
@@ -275,6 +312,7 @@ Func _Event_TV_DblClick($hItem)
 EndFunc
 
 Func _Event_TV_RClick($hItem)
+	GuiCtrlSetState($CMenu_Run, $GUI_DISABLE)
 	GuiCtrlSetState($CMenu_OpenAll, $GUI_DISABLE)
 	GuiCtrlSetState($CMenu_AddFile, $GUI_DISABLE)
 	GuiCtrlSetState($CMenu_AddFolder, $GUI_DISABLE)
@@ -282,6 +320,7 @@ Func _Event_TV_RClick($hItem)
 	GuiCtrlSetState($CMenu_Close, $GUI_DISABLE)
 	GuiCtrlSetState($CMenu_Rename, $GUI_DISABLE)
 	GuiCtrlSetState($CMenu_Browse, $GUI_DISABLE)
+	GuiCtrlSetState($CMenu_ShellExec, $GUI_DISABLE)
 	; ---
 	Local $info = _TV_ItemGetInfo($hItem)
 	Switch $info[1]
@@ -302,6 +341,8 @@ Func _Event_TV_RClick($hItem)
 			GuiCtrlSetState($CMenu_Delete, $GUI_ENABLE)
 			GuiCtrlSetState($CMenu_Rename, $GUI_ENABLE)
 			GuiCtrlSetState($CMenu_Browse, $GUI_ENABLE)
+			GuiCtrlSetState($CMenu_ShellExec, $GUI_ENABLE)
+			GuiCtrlSetState($CMenu_Run, $GUI_ENABLE)
 	EndSwitch
 	; ---
 	; on rend le projet actif
